@@ -8,8 +8,6 @@ def main(pts_path,file_type):
                 wav_path = os.path.abspath(wav_path)
                 if file_type == 'wav.scp':
                     print(wav_label,wav_path)
-                elif file_type == 'utt2spk':
-                    print(wav_label, wav_label)
 if __name__ == '__main__':
     pts_path = sys.argv[1]
     file_type = sys.argv[2]

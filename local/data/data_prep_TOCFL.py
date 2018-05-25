@@ -1,4 +1,5 @@
 import os,sys
+
 def main(tocfl_path,file_type):
     wavdir_path = os.path.join(tocfl_path,'wav')
     wavdir_path = os.path.abspath(wavdir_path)
@@ -9,8 +10,11 @@ def main(tocfl_path,file_type):
         txt_file = os.path.join(txt_path,wav_label+'.txt')
         txt = open(txt_file,'r',encoding='UTF-8').read()
         trans = txt.rstrip()
-        trans = ' '.join(list(trans))
+        #trans = ' '.join(list(trans))
         if file_type == 'text':
+            sys.path.append('local/data/tool/jieba-zh_TW')
+            import jieba
+            trans = ' '.join(jieba.cut(trans))
             print(wav_label,trans)
         elif file_type == 'wav.scp':
             print(wav_label,wav_path)

@@ -4,18 +4,18 @@ import sys,os
 ##Usage python data_prep.py <corpus_path> <cyberon_train/cyberon_test> <type : text/wav.scp/utt2spk>
 #cps1_test_spk = ['F0095','F0096','F0097','M0094','M0095','M0096']
 #cps3_test_spk = ['F0100','F0096','F0097','M0094','M0095','M0096']
-cps1_test_spk = ['F0096','F0097','M0095','M0096']
-cps3_test_spk = ['F0100','F0097','M0095','M0096']
+cps3_1_test_spk = ['F0095','F0094','M0093','M0094']
+cps3_2_test_spk = ['F0093','F0094','M0093','M0094']
 
 def check_train_set(wav,file_name):
     spk = wav.split('\\')[1]
-    if file_name == 'CPS1.txt':
-        if spk in cps1_test_spk:
+    if file_name == 'Tweng_Cps3-1/TWENG_CPS3-1.spt':
+        if spk in cps3_1_test_spk:
             return False
         else:
             return True
     else:
-        if spk in cps3_test_spk:
+        if spk in cps3_2_test_spk:
             return False
         else:
             return True
@@ -30,7 +30,7 @@ def modify_spk(wav):
     wav = wav.replace(spk,modify_spk)
     return wav
 def main(cyberon_path, is_train, file_type):
-    for file_name in ['CPS1.txt','CPS3-1.txt','CPS3-2.txt']:
+    for file_name in ['Tweng_Cps3-1/TWENG_CPS3-1.spt','Tweng_Cps3-2/TWENG_CPS3-2.spt']:
         with open(os.path.join(cyberon_path,file_name),'r') as f:
             for line in f:
                 tokens = line.rstrip().split()
@@ -43,7 +43,7 @@ def main(cyberon_path, is_train, file_type):
                 if not is_train and check_train_set(wav,file_name):
                     continue
                 #wav_label
-                wav_label = modify_wav.replace('\\','-').replace('_','').replace('CPS1','CPS1-1').replace('Sen0','SenISO0')
+                wav_label = modify_wav.replace('\\','-').replace('_','').replace('Sen0','Senppc0')
                 #print(wav,wav_label)
                 #wav_abs_path
                 wav_path = wav.replace('\\','/')
@@ -55,9 +55,7 @@ def main(cyberon_path, is_train, file_type):
                 spk = modify_wav.split('\\')[0] + '-' +  modify_wav.split('\\')[1]
                 spk = spk.replace('_','-')
                 if file_type == 'text':
-                    sys.path.append('local/data/tool/jieba-zh_TW')
-                    import jieba
-                    trans = ' '.join(jieba.cut(trans))
+                    trans = trans.replace('-',' ').lower()
                     print(wav_label,trans)
                 elif file_type == 'wav.scp':
                     print(wav_label,wav_path)
