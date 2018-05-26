@@ -1,0 +1,3 @@
+[submodule "local/data/tool/jieba-zh_TW"]
+	path = local/data/tool/jieba-zh_TW
+	url = https://github.com/APCLab/jieba-tw

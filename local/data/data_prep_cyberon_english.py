@@ -35,6 +35,7 @@ def main(cyberon_path, is_train, file_type):
             for line in f:
                 tokens = line.rstrip().split()
                 trans,wav = tokens[1],tokens[0]
+                wav = wav.replace('TWENG_CPS3','Tweng_Cps3') ##fix path
                 # training set
                 modify_wav = modify_spk(wav)
                 if is_train and not check_train_set(wav,file_name):

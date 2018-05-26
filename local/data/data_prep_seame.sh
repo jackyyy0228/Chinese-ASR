@@ -1,7 +1,7 @@
 #!/bin/bash
 . ./local/data/corpus_path.sh
 
-data=./data/seame
+data=./data/seame/mfcc39_pitch9
 mkdir -p $data
 
 for x in wav.scp utt2spk text segments ; do

@@ -1,7 +1,7 @@
 #!/bin/bash
 . ./local/data/corpus_path.sh
 
-data=./data/NER
+data=./data/NER/mfcc39_pitch9
 mkdir -p $data
 
 for x in wav.scp utt2spk text; do
