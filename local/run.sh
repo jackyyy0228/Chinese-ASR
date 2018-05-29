@@ -1,5 +1,5 @@
 #!/bin/bash
-AUDIO_DATA_PREP=true
+AUDIO_DATA_PREP=false
 LANG_DATA_PREP=false
 EXTRACT_MFCC=false
 
@@ -41,6 +41,7 @@ traindata=./data/train
 testdata_affix="TOCFL cyberon_english_test cyberon_chinese_test"
 
 if [ $TRAIN_MONO = true ] ; then
+  echo "Training Monophone models...."
   #Monophone training
   steps/train_mono.sh --cmd "$train_cmd" --nj $nj \
    data/train data/lang $exp_dir/mono0a || exit 1;
@@ -53,7 +54,7 @@ if [ $TRAIN_MONO = true ] ; then
  done
  
  # Get alignments from monophone system.
- steps/align_si.sh --cmd "$train_cmd" --nj 8 \
+ steps/align_si.sh --cmd "$train_cmd" --nj $nj \
    data/train data/lang $exp_dir/mono0a $exp_dir/mono_ali || exit 1;
   
 fi
