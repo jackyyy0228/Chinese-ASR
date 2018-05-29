@@ -34,17 +34,16 @@ fi
 if [ $EXTRACT_MFCC = true ] ; then
   local/extract_mfcc.sh --nj $nj --stage 0
 fi
-exit 1
 
 exp_dir=./exp
-traindata=./data/train
+traindata=./$traindata/mfcc39_pitch
 testdata_affix="TOCFL cyberon_english_test cyberon_chinese_test"
 
 if [ $TRAIN_MONO = true ] ; then
   echo "Training Monophone models...."
   #Monophone training
   steps/train_mono.sh --cmd "$train_cmd" --nj $nj \
-   data/train data/lang $exp_dir/mono0a || exit 1;
+   $traindata data/lang $exp_dir/mono0a || exit 1;
 
  # Monophone decoding
  utils/mkgraph.sh data/lang_4gram-mincount_test $exp_dir/mono0a $exp_dir/mono0a/graph || exit 1
@@ -55,7 +54,7 @@ if [ $TRAIN_MONO = true ] ; then
  
  # Get alignments from monophone system.
  steps/align_si.sh --cmd "$train_cmd" --nj $nj \
-   data/train data/lang $exp_dir/mono0a $exp_dir/mono_ali || exit 1;
+   $traindata data/lang $exp_dir/mono0a $exp_dir/mono_ali || exit 1;
   
 fi
   
@@ -65,7 +64,7 @@ if [ $TRAIN_TRI = true ] ; then
 
  # train tri1 [first triphone pass]
  steps/train_deltas.sh --cmd "$train_cmd" \
-  3000 30000 data/train data/lang $exp_dir/mono_ali $exp_dir/tri1 || exit 1;
+  3000 30000 $traindata data/lang $exp_dir/mono_ali $exp_dir/tri1 || exit 1;
 
  # decode tri1
  utils/mkgraph.sh data/lang_4gram-mincount_test $exp_dir/tri1 $exp_dir/tri1/graph || exit 1;
@@ -76,11 +75,11 @@ if [ $TRAIN_TRI = true ] ; then
 
  # align tri1
  steps/align_si.sh --cmd "$train_cmd" --nj $nj \
-   data/train data/lang $exp_dir/tri1 $exp_dir/tri1_ali || exit 1;
+   $traindata data/lang $exp_dir/tri1 $exp_dir/tri1_ali || exit 1;
 
  # train tri2 [delta+delta-deltas]
  steps/train_deltas.sh --cmd "$train_cmd" \
-  3000 30000 data/train data/lang $exp_dir/tri1_ali $exp_dir/tri2 || exit 1;
+  3000 30000 $traindata data/lang $exp_dir/tri1_ali $exp_dir/tri2 || exit 1;
 
  # decode tri2
  utils/mkgraph.sh data/lang_4gram-mincount_test $exp_dir/tri2 $exp_dir/tri2/graph
@@ -92,11 +91,11 @@ if [ $TRAIN_TRI = true ] ; then
  # train and decode tri2b [LDA+MLLT]
 
  steps/align_si.sh --cmd "$train_cmd" --nj $nj \
-   data/train data/lang $exp_dir/tri2 $exp_dir/tri2_ali || exit 1;
+   $traindata data/lang $exp_dir/tri2 $exp_dir/tri2_ali || exit 1;
 
  # Train tri3a, which is LDA+MLLT,
  steps/train_lda_mllt.sh --cmd "$train_cmd" \
-  2500 20000 data/train data/lang $exp_dir/tri2_ali $exp_dir/tri3a || exit 1;
+  2500 20000 $traindata data/lang $exp_dir/tri2_ali $exp_dir/tri3a || exit 1;
 
  utils/mkgraph.sh data/lang_4gram-mincount_test $exp_dir/tri3a $exp_dir/tri3a/graph || exit 1;
  for affix in $testdata_affix ; do
@@ -107,10 +106,10 @@ if [ $TRAIN_TRI = true ] ; then
  # do the alignment with fMLLR.
 
  steps/align_fmllr.sh --cmd "$train_cmd" --nj $nj \
-   data/train data/lang $exp_dir/tri3a $exp_dir/tri3a_ali || exit 1;
+   $traindata data/lang $exp_dir/tri3a $exp_dir/tri3a_ali || exit 1;
 
  steps/train_sat.sh --cmd "$train_cmd" \
-   3000 30000 data/train data/lang $exp_dir/tri3a_ali $exp_dir/tri4a || exit 1;
+   3000 30000 $traindata data/lang $exp_dir/tri3a_ali $exp_dir/tri4a || exit 1;
 
  utils/mkgraph.sh data/lang_4gram-mincount_test $exp_dir/tri4a $exp_dir/tri4a/graph
  for affix in $testdata_affix ; do
@@ -119,12 +118,12 @@ if [ $TRAIN_TRI = true ] ; then
  done
 
  steps/align_fmllr.sh  --cmd "$train_cmd" --nj $nj \
-   data/train data/lang $exp_dir/tri4a $exp_dir/tri4a_ali
+   $traindata data/lang $exp_dir/tri4a $exp_dir/tri4a_ali
 
  # Building a larger SAT system.
 
  steps/train_sat.sh --cmd "$train_cmd" \
-   5000 120000 data/train data/lang $exp_dir/tri4a_ali $exp_dir/tri5a || exit 1;
+   5000 120000 $traindata data/lang $exp_dir/tri4a_ali $exp_dir/tri5a || exit 1;
 
  utils/mkgraph.sh data/lang_4gram-mincount_test $exp_dir/tri5a $exp_dir/tri5a/graph || exit 1;
  for affix in $testdata_affix ; do
@@ -133,7 +132,7 @@ if [ $TRAIN_TRI = true ] ; then
  done
 
  steps/align_fmllr.sh --cmd "$train_cmd" --nj $nj \
-   data/train data/lang $exp_dir/tri5a $exp_dir/tri5a_ali || exit 1;
+   $traindata data/lang $exp_dir/tri5a $exp_dir/tri5a_ali || exit 1;
 fi
 
 if [ $TRAIN_CHAIN = true ] ; then
