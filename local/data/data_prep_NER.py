@@ -13,6 +13,7 @@ def main(corpus_path,file_type):
                     continue
                 trans = open(txt_path,'r', encoding='utf-8').read()
                 trans = trans.rstrip()
+                trans = trans.upper()
 
                 if file_type == 'wav.scp':
                     print(wav_label, wav_path)

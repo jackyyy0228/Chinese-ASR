@@ -15,6 +15,7 @@ def main(tocfl_path,file_type):
             sys.path.append('local/data/tool/jieba-zh_TW')
             import jieba
             trans = ' '.join(jieba.cut(trans))
+            trans = trans.upper()
             print(wav_label,trans)
         elif file_type == 'wav.scp':
             print(wav_label,wav_path)

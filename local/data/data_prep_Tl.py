@@ -12,6 +12,7 @@ def main(corpus_path,file_type):
 
                         wav_label = wav_file.split('.')[0]
                         trans = ' '.join(list(trans))
+                        trans = trans.upper()
                         
                         spk = wav_file.split('_')[0]
                         wav_path = os.path.join(corpus_path,'Wav/{}/{}'.format(spk,wav_file))

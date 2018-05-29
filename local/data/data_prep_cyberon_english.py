@@ -27,6 +27,7 @@ def modify_spk(wav):
         modify_spk = spk
         for _ in range(7-len(spk)):
             modify_spk = modify_spk + '0'
+    modify_spk = modify_spk.replace('_','A')
     wav = wav.replace(spk,modify_spk)
     return wav
 def main(cyberon_path, is_train, file_type):
@@ -56,7 +57,7 @@ def main(cyberon_path, is_train, file_type):
                 spk = modify_wav.split('\\')[0] + '-' +  modify_wav.split('\\')[1]
                 spk = spk.replace('_','-')
                 if file_type == 'text':
-                    trans = trans.replace('-',' ').lower()
+                    trans = trans.replace('-',' ').upper()
                     print(wav_label,trans)
                 elif file_type == 'wav.scp':
                     print(wav_label,wav_path)
@@ -67,7 +68,7 @@ if __name__ == '__main__':
     cyberon_path = sys.argv[1]
     is_train = sys.argv[2]
     file_type = sys.argv[3]
-    if is_train == 'cyberon_train':
+    if is_train == 'cyberon_english_train':
         is_train = True
     else:
         is_train = False

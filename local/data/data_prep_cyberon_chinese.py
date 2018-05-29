@@ -27,6 +27,7 @@ def modify_spk(wav):
         modify_spk = spk
         for _ in range(7-len(spk)):
             modify_spk = modify_spk + '0'
+    modify_spk = modify_spk.replace('_','A')
     wav = wav.replace(spk,modify_spk)
     return wav
 def main(cyberon_path, is_train, file_type):
@@ -58,6 +59,7 @@ def main(cyberon_path, is_train, file_type):
                     sys.path.append('local/data/tool/jieba-zh_TW')
                     import jieba
                     trans = ' '.join(jieba.cut(trans))
+                    trans = trans.upper()
                     print(wav_label,trans)
                 elif file_type == 'wav.scp':
                     print(wav_label,wav_path)
@@ -68,7 +70,7 @@ if __name__ == '__main__':
     cyberon_path = sys.argv[1]
     is_train = sys.argv[2]
     file_type = sys.argv[3]
-    if is_train == 'cyberon_train':
+    if is_train == 'cyberon_chinese_train':
         is_train = True
     else:
         is_train = False

@@ -6,4 +6,5 @@ NER=/home/jacky/work/kgb/corpus/NER-Trs-Vol1
 TOCFL=/home/jacky/work/kgb/corpus/TOCFL/segmented
 seame=/home/jacky/work/kgb/corpus/seame
 Tl=/home/jacky/work/kgb/corpus/TlAlphaDigit
-
+wiki=/home/jacky/work/kgb/corpus/wiki
+ptt=/home/jacky/work/kgb/corpus/ptt

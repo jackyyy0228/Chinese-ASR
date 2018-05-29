@@ -9,13 +9,20 @@ def convert_to_8_digits(integer):
     return y
 def convert_to_zh(line):
     return converted
-
+def convert_name(wav_label):
+    tokens = wav_label.split('_')
+    x = tokens[0]
+    for i in range(9-len(tokens[0])):
+        x = x + 'A'
+    tokens[0] = x
+    return '_'.join(tokens)
 def main(corpus_path,file_type):
     openCC = OpenCC('s2t')  
     for root, dirs, files in os.walk(corpus_path, topdown=False):
         for name in files:
             if name.endswith('.flac'):
                 wav_label = name.split('.')[0]
+                wav_label = convert_name(wav_label) 
                 wav_path = os.path.join(root,name)
                 wav_path = os.path.abspath(wav_path)
                 
@@ -38,6 +45,7 @@ def main(corpus_path,file_type):
                             for item in ['(',')','[',']','~']:
                                 trans = trans.replace(item,'')
                             trans = openCC.convert(trans)
+                            trans = trans.upper()
 
                             if file_type == 'utt2spk':
                                 print(seg_label, seg_label)

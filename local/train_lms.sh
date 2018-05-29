@@ -3,11 +3,17 @@
 
 # To be run from one directory above this script.
 
-text=/home/jacky/work/kgb/corpus/text
-train_text=data/cyberon_train/text
-lexicon=data/local/dict/lexicon.txt
+dict_dir=data/local/dict
+text=$dict_dir/text
+lexicon=$dict_dir/lexicon.txt
+
+lm_type=4gram
 dir=data/local/lm
 
+add_ABCD=true
+
+. ./utils/parse_options.sh
+. ./path.sh
 for f in "$text" "$lexicon"; do
   [ ! -f $x ] && echo "$0: No such file $f" && exit 1;
 done
@@ -15,8 +21,6 @@ done
 # This script takes no arguments.  It assumes you have already run
 # swbd_p1_data_prep.sh.
 # It takes as input the files
-#data/local/train/text
-#data/local/dict/lexicon.txt
 mkdir -p $dir
 
 export LC_ALL=C # You'll get errors about things being not sorted, if you
@@ -29,11 +33,10 @@ if [ ! -x $kaldi_lm ]; then
   exit 1
 fi
 
-cat $train_text | cut -d' ' -f2-  > $dir/train_text
 
 cleantext=$dir/text.no_oov
 
-cat $text $dir/train_text | awk -v lex=$lexicon 'BEGIN{while((getline<lex) >0){ seen[$1]=1; } }
+cat $text | awk -v lex=$lexicon 'BEGIN{while((getline<lex) >0){ seen[$1]=1; } }
   {for(n=1; n<=NF;n++) {  if (seen[$n]) { printf("%s ", $n); } else {printf("<UNK> ");} } printf("\n");}' \
   > $cleantext || exit 1;
 
@@ -58,7 +61,19 @@ cat $cleantext | awk -v wmap=$dir/word_map 'BEGIN{while((getline<wmap)>0)map[$1]
   { for(n=2;n<=NF;n++) { printf map[$n]; if(n<NF){ printf " "; } else { print ""; }}}' | gzip -c >$dir/train.gz \
    || exit 1;
 
-train_lm.sh --arpa --lmtype 3gram-mincount $dir || exit 1;
+train_lm.sh --arpa --lmtype $lm_type $dir || exit 1;
+
+if [ $add_ABCD = true ] ; then
+  arpa_lm=$dir/$lm_type/lm_unpruned.gz
+  arpa_lm_unzip=$dir/$lm_type/lm_unpruned
+  
+  arpa_ABCD=$dir/$lm_type/lm_unpruned_ABCD
+  gunzip $arpa_lm
+
+  PYTHONIOENCODING=utf-8 python3 local/add_ABCD.py $arpa_lm_unzip $arpa_ABCD
+  gzip $arpa_lm_unzip
+  gzip $arpa_ABCD
+fi
 
 # LM is small enough that we don't need to prune it (only about 0.7M N-grams).
 # Perplexity over 128254.000000 words is 90.446690
