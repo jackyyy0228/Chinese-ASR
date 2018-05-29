@@ -36,7 +36,7 @@ if [ $EXTRACT_MFCC = true ] ; then
 fi
 
 exp_dir=./exp
-traindata=./$traindata/mfcc39_pitch
+traindata=./data/train/mfcc39_pitch9
 testdata_affix="TOCFL cyberon_english_test cyberon_chinese_test"
 
 if [ $TRAIN_MONO = true ] ; then
