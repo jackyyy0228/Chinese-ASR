@@ -1,7 +1,7 @@
 #!/bin/bash
 AUDIO_DATA_PREP=false
 LANG_DATA_PREP=false
-EXTRACT_MFCC=false
+EXTRACT_MFCC=true
 
 TRAIN_MONO=true
 TRAIN_TRI=true
@@ -30,6 +30,7 @@ fi
 
 . ./path.sh
 . ./cmd.sh
+. ./utils/parse_options.sh
 
 if [ $EXTRACT_MFCC = true ] ; then
   local/extract_mfcc.sh --nj $nj --stage 0
