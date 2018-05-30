@@ -18,13 +18,13 @@ if [ $stage -le 1 ] ; then
   for corpus in cyberon_chinese_train cyberon_english_train cyberon_chinese_test cyberon_english_test PTS NER TOCFL seame Tl ; do
     ##Extract MFCC39 + pitch9 feature
     data=./data/$corpus/mfcc39_pitch9
-    steps/make_mfcc_pitch_online.sh --cmd "$train_cmd" --nj $nj $data exp/make_mfcc/$corpus $mfccdir || exit 1;
+    steps/make_mfcc_pitch_online.sh --cmd "$train_cmd" --nj $nj --name $corpus $data exp/make_mfcc/$corpus $mfccdir || exit 1;
     steps/compute_cmvn_stats.sh $data exp/make_mfcc/$corpus $mfccdir || exit 1;
     
     ##Extract MFCC40 + pitch3 feature
     data=./data/$corpus/mfcc40_pitch3
     utils/copy_data_dir.sh data/$corpus/mfcc39_pitch9 $data
-    steps/make_mfcc_pitch_online.sh --cmd "$train_cmd" --nj $nj --mfcc-config conf/mfcc_hires.conf \
+    steps/make_mfcc_pitch_online.sh --cmd "$train_cmd" --nj $nj --name $corpus --mfcc-config conf/mfcc_hires.conf \
       $data exp/make_hires/$corpus $mfcc_pitch_hires_dir || exit 1;
     steps/compute_cmvn_stats.sh $data exp/make_pitch_hires/$corpus $mfcc_pitch_hires_dir || exit 1;
 
@@ -33,7 +33,7 @@ if [ $stage -le 1 ] ; then
     steps/compute_cmvn_stats.sh data/$corpus/mfcc40 exp/make_hires/$corpus $mfcc_hires_dir || exit 1;
   done
 fi
-exit
+exit 1
 if [ $stage -le 2 ] ; then
   combine48=''
   combine43=''

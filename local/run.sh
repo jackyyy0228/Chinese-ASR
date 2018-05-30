@@ -37,7 +37,7 @@ if [ $EXTRACT_MFCC = true ] ; then
 fi
 
 exp_dir=./exp
-traindata=./data/train/mfcc39_pitch9
+traindata=./data/cyberon_chinese_train/mfcc39_pitch9
 testdata_affix="TOCFL cyberon_english_test cyberon_chinese_test"
 
 if [ $TRAIN_MONO = true ] ; then
@@ -58,8 +58,6 @@ if [ $TRAIN_MONO = true ] ; then
    $traindata data/lang $exp_dir/mono0a $exp_dir/mono_ali || exit 1;
   
 fi
-  
-
 
 if [ $TRAIN_TRI = true ] ; then
 

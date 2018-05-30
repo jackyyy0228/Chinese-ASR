@@ -14,6 +14,7 @@ mfcc_config=conf/mfcc.conf
 online_pitch_config=conf/online_pitch.conf
 paste_length_tolerance=2
 compress=true
+name=
 # End configuration section.
 
 echo "$0 $@"  # Print the command line for logging
@@ -53,7 +54,9 @@ fi
 mfcc_pitch_dir=`perl -e '($dir,$pwd)= @ARGV; if($dir!~m:^/:) { $dir = "$pwd/$dir"; } print $dir; ' $mfcc_pitch_dir ${PWD}`
 
 # use "name" as part of name of the archive.
-name=`basename $data`
+if [ -z $name ]; then  
+  name=`basename $data`
+fi
 
 mkdir -p $mfcc_pitch_dir || exit 1;
 mkdir -p $logdir || exit 1;
