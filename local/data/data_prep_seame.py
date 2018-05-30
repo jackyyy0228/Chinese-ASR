@@ -40,7 +40,7 @@ def main(corpus_path,file_type):
                             start,end = int(tokens[1]),int(tokens[2])
                             ct_s = convert_to_8_digits(start)
                             ct_e = convert_to_8_digits(end)
-                            seg_label = tokens[0] + '_' + ct_s + '_' + ct_e
+                            seg_label = wav_label + '_' + ct_s + '_' + ct_e
                             trans = ' '.join(tokens[4:])
                             for item in ['(',')','[',']','~']:
                                 trans = trans.replace(item,'')
