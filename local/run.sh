@@ -1,5 +1,5 @@
 #!/bin/bash
-AUDIO_DATA_PREP=true
+AUDIO_DATA_PREP=false
 LANG_DATA_PREP=false
 EXTRACT_MFCC=true
 

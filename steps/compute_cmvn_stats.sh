@@ -24,6 +24,7 @@ fake=false   # If specified, can generate fake/dummy CMVN stats (that won't norm
 fake_dims=   # as the "fake" option, but you can generate "fake" stats only for certain
              # dimensions.
 two_channel=false
+name=
 
 if [ "$1" == "--fake" ]; then
   fake=true
@@ -36,6 +37,12 @@ if [ "$1" == "--fake-dims" ]; then
 fi
 if [ "$1" == "--two-channel" ]; then
   two_channel=true
+  shift
+fi
+
+if [ "$1" == "--name" ]; then
+  name==$2
+  shift
   shift
 fi
 
@@ -71,7 +78,9 @@ fi
 cmvndir=`perl -e '($dir,$pwd)= @ARGV; if($dir!~m:^/:) { $dir = "$pwd/$dir"; } print $dir; ' $cmvndir ${PWD}`
 
 # use "name" as part of name of the archive.
-name=`basename $data`
+if [ -z $name ]; then  
+  name=`basename $data`
+fi
 
 mkdir -p $cmvndir || exit 1;
 mkdir -p $logdir || exit 1;

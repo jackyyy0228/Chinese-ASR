@@ -19,21 +19,39 @@ if [ $stage -le 1 ] ; then
     ##Extract MFCC39 + pitch9 feature
     data=./data/$corpus/mfcc39_pitch9
     steps/make_mfcc_pitch_online.sh --cmd "$train_cmd" --nj $nj --name $corpus $data exp/make_mfcc/$corpus $mfccdir || exit 1;
-    steps/compute_cmvn_stats.sh $data exp/make_mfcc/$corpus $mfccdir || exit 1;
+    steps/compute_cmvn_stats.sh --name $corpus $data exp/make_mfcc/$corpus $mfccdir || exit 1;
     
     ##Extract MFCC40 + pitch3 feature
     data=./data/$corpus/mfcc40_pitch3
     utils/copy_data_dir.sh data/$corpus/mfcc39_pitch9 $data
+
+    ## Volumn Perturbation
+    cat $data/wav.scp | python2 -c "
+import sys, os, subprocess, re, random
+scale_low = 1.0/8
+scale_high = 2.0
+for line in sys.stdin.readlines():
+  if len(line.strip()) == 0:
+    continue
+  if line.strip().endswith('|'):
+    print '{0} sox --vol {1} -t wav - -t wav - |'.format(line.strip(), random.uniform(scale_low, scale_high))
+  else:
+    label, wav_file = line.split()
+    print '{0} sox --vol {2} -t wav {1} -t wav - |'.format(label,wav_file,random.uniform(scale_low, scale_high))
+"| sort -k1,1 -u  > $data/wav.scp_scaled || exit 1;
+     mv $data/wav.scp $data/wav.scp_nonorm
+     mv $data/wav.scp_scaled $data/wav.scp
+    
+    utils/copy_data_dir.sh data/$corpus/mfcc39_pitch9 $data
     steps/make_mfcc_pitch_online.sh --cmd "$train_cmd" --nj $nj --name $corpus --mfcc-config conf/mfcc_hires.conf \
       $data exp/make_hires/$corpus $mfcc_pitch_hires_dir || exit 1;
-    steps/compute_cmvn_stats.sh $data exp/make_pitch_hires/$corpus $mfcc_pitch_hires_dir || exit 1;
+    steps/compute_cmvn_stats.sh --name $corpus $data exp/make_pitch_hires/$corpus $mfcc_pitch_hires_dir || exit 1;
 
     # create MFCC data dir without pitch to extract iVector
     utils/data/limit_feature_dim.sh 0:39 $data data/$corpus/mfcc40 || exit 1;
-    steps/compute_cmvn_stats.sh data/$corpus/mfcc40 exp/make_hires/$corpus $mfcc_hires_dir || exit 1;
+    steps/compute_cmvn_stats.sh --name $corpus  data/$corpus/mfcc40 exp/make_hires/$corpus $mfcc_hires_dir || exit 1;
   done
 fi
-exit 1
 if [ $stage -le 2 ] ; then
   combine48=''
   combine43=''
