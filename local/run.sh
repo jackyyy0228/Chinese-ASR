@@ -31,7 +31,6 @@ if [ $LANG_DATA_PREP = true ] ; then
   #G compilation, check LG composition
   local/format_data.sh --lm-type 3gram-mincount
 fi
-exit 1
 
 if [ $EXTRACT_MFCC = true ] ; then
   local/extract_mfcc.sh --nj $nj --stage 0
