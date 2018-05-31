@@ -43,12 +43,12 @@ testdata_affix="TOCFL cyberon_english_test cyberon_chinese_test"
 
 if [ $TRAIN_MONO = true ] ; then
   echo "Training Monophone models...."
-  utils/subset_data_dir.sh --shortest data/train/mfcc39_pitch9 5000 data/train_5kshort/mfcc39_pitch9
-  utils/subset_data_dir.sh  data/train/mfcc39_pitch9 20000 data/train_20k/mfcc39_pitch9
+  utils/subset_data_dir.sh --shortest data/train/mfcc39_pitch9 10000 data/train_10kshort/mfcc39_pitch9
   utils/subset_data_dir.sh  data/train/mfcc39_pitch9 50000 data/train_50k/mfcc39_pitch9
+  utils/subset_data_dir.sh  data/train/mfcc39_pitch9 200000 data/train_200k/mfcc39_pitch9
   #Monophone training
   steps/train_mono.sh --cmd "$train_cmd" --nj $nj \
-   data/train_5kshort/mfcc39_pitch9 data/lang $exp_dir/mono0a || exit 1;
+   data/train_10kshort/mfcc39_pitch9 data/lang $exp_dir/mono0a || exit 1;
 
  # Monophone decoding
  utils/mkgraph.sh data/lang_3gram-mincount_test $exp_dir/mono0a $exp_dir/mono0a/graph || exit 1
@@ -59,7 +59,7 @@ if [ $TRAIN_MONO = true ] ; then
  
  # Get alignments from monophone system.
  steps/align_si.sh --cmd "$train_cmd" --nj $nj \
-   data/train_20k/mfcc39_pitch9 data/lang $exp_dir/mono0a $exp_dir/mono_ali || exit 1;
+   data/train_50k/mfcc39_pitch9 data/lang $exp_dir/mono0a $exp_dir/mono_ali || exit 1;
   
 fi
 
@@ -67,7 +67,7 @@ if [ $TRAIN_TRI = true ] ; then
 
  # train tri1 [first triphone pass]
  steps/train_deltas.sh --cmd "$train_cmd" \
-  2000 10000  data/train_20k/mfcc39_pitch9 data/lang $exp_dir/mono_ali $exp_dir/tri1 || exit 1;
+  2000 10000  data/train_50k/mfcc39_pitch9 data/lang $exp_dir/mono_ali $exp_dir/tri1 || exit 1;
 
  # decode tri1
  utils/mkgraph.sh data/lang_3gram-mincount_test $exp_dir/tri1 $exp_dir/tri1/graph || exit 1;
@@ -78,11 +78,11 @@ if [ $TRAIN_TRI = true ] ; then
 
  # align tri1
  steps/align_si.sh --cmd "$train_cmd" --nj $nj \
-   data/train_50k/mfcc39_pitch9 data/lang $exp_dir/tri1 $exp_dir/tri1_ali || exit 1;
+   data/train_200k/mfcc39_pitch9 data/lang $exp_dir/tri1 $exp_dir/tri1_ali || exit 1;
 
  # train tri2 [delta+delta-deltas]
  steps/train_deltas.sh --cmd "$train_cmd" \
-  2500 12500 data/train_50k/mfcc39_pitch9 data/lang $exp_dir/tri1_ali $exp_dir/tri2 || exit 1;
+  2500 12500 data/train_200k/mfcc39_pitch9 data/lang $exp_dir/tri1_ali $exp_dir/tri2 || exit 1;
 
  # decode tri2
  utils/mkgraph.sh data/lang_3gram-mincount_test $exp_dir/tri2 $exp_dir/tri2/graph
@@ -94,11 +94,11 @@ if [ $TRAIN_TRI = true ] ; then
  # train and decode tri2b [LDA+MLLT]
 
  steps/align_si.sh --cmd "$train_cmd" --nj $nj \
-   data/train_50k/mfcc39_pitch9 data/lang $exp_dir/tri2 $exp_dir/tri2_ali || exit 1;
+   data/train_200k/mfcc39_pitch9 data/lang $exp_dir/tri2 $exp_dir/tri2_ali || exit 1;
 
  # Train tri3a, which is LDA+MLLT,
  steps/train_lda_mllt.sh --cmd "$train_cmd" \
-  3000 30000 data/train_50k/mfcc39_pitch9 data/lang $exp_dir/tri2_ali $exp_dir/tri3a || exit 1;
+  3000 30000 data/train_200k/mfcc39_pitch9 data/lang $exp_dir/tri2_ali $exp_dir/tri3a || exit 1;
 
  utils/mkgraph.sh data/lang_3gram-mincount_test $exp_dir/tri3a $exp_dir/tri3a/graph || exit 1;
  for affix in $testdata_affix ; do
