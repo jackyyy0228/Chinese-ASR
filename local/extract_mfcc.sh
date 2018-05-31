@@ -20,7 +20,9 @@ if [ $stage -le 1 ] ; then
     data=./data/$corpus/mfcc39_pitch9
     steps/make_mfcc_pitch_online.sh --cmd "$train_cmd" --nj $nj --name $corpus $data exp/make_mfcc/$corpus $mfccdir || exit 1;
     steps/compute_cmvn_stats.sh --name $corpus $data exp/make_mfcc/$corpus $mfccdir || exit 1;
-    
+    if [ $corpus = seame ]; then
+      python3 local/data/fix_seame.py $data
+    fi
     ##Extract MFCC40 + pitch3 feature
     data=./data/$corpus/mfcc40_pitch3
     utils/copy_data_dir.sh data/$corpus/mfcc39_pitch9 $data
@@ -42,7 +44,6 @@ for line in sys.stdin.readlines():
      mv $data/wav.scp $data/wav.scp_nonorm
      mv $data/wav.scp_scaled $data/wav.scp
     
-    utils/copy_data_dir.sh data/$corpus/mfcc39_pitch9 $data
     steps/make_mfcc_pitch_online.sh --cmd "$train_cmd" --nj $nj --name $corpus --mfcc-config conf/mfcc_hires.conf \
       $data exp/make_hires/$corpus $mfcc_pitch_hires_dir || exit 1;
     steps/compute_cmvn_stats.sh --name $corpus $data exp/make_pitch_hires/$corpus $mfcc_pitch_hires_dir || exit 1;

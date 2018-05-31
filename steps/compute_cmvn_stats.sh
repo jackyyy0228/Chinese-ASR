@@ -41,7 +41,7 @@ if [ "$1" == "--two-channel" ]; then
 fi
 
 if [ "$1" == "--name" ]; then
-  name==$2
+  name=$2
   shift
   shift
 fi

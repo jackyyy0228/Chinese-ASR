@@ -54,8 +54,8 @@ set -e -o pipefail
 stage=2
 nj=8
 train_set=cyberon_train
-test_sets="cyberon_test TOCFL"
-gmm=cyberon/tri5a        # this is the source gmm-dir that we'll use for alignments; it
+test_sets="cyberon_chinese_test cyberon_english_test TOCFL"
+gmm=tri5a        # this is the source gmm-dir that we'll use for alignments; it
                  # should have alignments for the specified training data.
 num_threads_ubm=1
 nnet3_affix=       # affix for exp dirs, e.g. it was _cleaned in tedlium.
@@ -93,17 +93,15 @@ where "nvcc" is installed.
 EOF
 fi
 
-local/nnet3/run_ivector_common.sh --stage $stage --nj $nj 
 
 
 
 gmm_dir=exp/${gmm}
 ali_dir=exp/${gmm}_sp_ali
 lang=data/lang
-dir=exp/cyberon/nnet3${nnet3_affix}/tdnn_lstm${affix}_sp
-train_data_dir=data/${train_set}_sp_hires
-train_ivector_dir=exp/cyberon/nnet3/ivectors_cyberon_train_sp
-test_ivector_dir=exp/cyberon/nnet3/ivectors_cyberon_test
+dir=exp/nnet3${nnet3_affix}/tdnn_lstm${affix}_sp
+train_data_dir=data/train_sp/mfcc40
+train_ivector_dir=exp/nnet3/ivectors_train_sp
 
 for f in $train_data_dir/feats.scp $train_ivector_dir/ivector_online.scp \
     $gmm_dir/graph/HCLG.fst \
@@ -118,6 +116,8 @@ if [ $stage -le 12 ]; then
   num_targets=$(tree-info $ali_dir/tree |grep num-pdfs|awk '{print $2}')
 
   mkdir -p $dir/configs
+  tdnndim=520
+  lstmdim=130
   cat <<EOF > $dir/configs/network.xconfig
   input dim=100 name=ivector
   input dim=43 name=input
@@ -128,15 +128,15 @@ if [ $stage -le 12 ]; then
   fixed-affine-layer name=lda input=Append(-2,-1,0,1,2,ReplaceIndex(ivector, t, 0)) affine-transform-file=$dir/configs/lda.mat
 
   # the first splicing is moved before the lda layer, so no splicing here
-  relu-renorm-layer name=tdnn1 dim=260
-  relu-renorm-layer name=tdnn2 dim=260 input=Append(-1,0,1)
-  fast-lstmp-layer name=lstm1 cell-dim=260 recurrent-projection-dim=65 non-recurrent-projection-dim=65 decay-time=20 delay=-3
-  relu-renorm-layer name=tdnn3 dim=260 input=Append(-3,0,3)
-  relu-renorm-layer name=tdnn4 dim=260 input=Append(-3,0,3)
-  fast-lstmp-layer name=lstm2 cell-dim=260 recurrent-projection-dim=65 non-recurrent-projection-dim=65 decay-time=20 delay=-3
-  relu-renorm-layer name=tdnn5 dim=260 input=Append(-3,0,3)
-  relu-renorm-layer name=tdnn6 dim=260 input=Append(-3,0,3)
-  fast-lstmp-layer name=lstm3 cell-dim=260 recurrent-projection-dim=65 non-recurrent-projection-dim=65 decay-time=20 delay=-3
+  relu-renorm-layer name=tdnn1 dim=$tdnndim
+  relu-renorm-layer name=tdnn2 dim=$tdnndim input=Append(-1,0,1)
+  fast-lstmp-layer name=lstm1 cell-dim=$tdnndim recurrent-projection-dim=$lstmdim non-recurrent-projection-dim=$lstmdim decay-time=20 delay=-3
+  relu-renorm-layer name=tdnn3 dim=$tdnndim input=Append(-3,0,3)
+  relu-renorm-layer name=tdnn4 dim=$tdnndim input=Append(-3,0,3)
+  fast-lstmp-layer name=lstm2 cell-dim=$tdnndim recurrent-projection-dim=$lstmdim non-recurrent-projection-dim=$lstmdim decay-time=20 delay=-3
+  relu-renorm-layer name=tdnn5 dim=$tdnndim input=Append(-3,0,3)
+  relu-renorm-layer name=tdnn6 dim=$tdnndim input=Append(-3,0,3)
+  fast-lstmp-layer name=lstm3 cell-dim=$tdnndim recurrent-projection-dim=$lstmdim non-recurrent-projection-dim=$lstmdim decay-time=20 delay=-3
 
   output-layer name=output input=lstm3 output-delay=$label_delay dim=$num_targets max-change=1.5
 
@@ -165,14 +165,14 @@ if [ $stage -le 13 ]; then
     --trainer.optimization.initial-effective-lrate=0.0003 \
     --trainer.optimization.final-effective-lrate=0.00003 \
     --trainer.optimization.shrink-value 0.99 \
-    --trainer.rnn.num-chunk-per-minibatch=32 \
+    --trainer.rnn.num-chunk-per-minibatch=64\
     --trainer.optimization.momentum=0.5 \
     --egs.chunk-width=$chunk_width \
     --egs.chunk-left-context=$chunk_left_context \
     --egs.chunk-right-context=$chunk_right_context \
     --egs.chunk-left-context-initial=0 \
     --egs.chunk-right-context-final=0 \
-    --egs.dir=$dir/egs \
+    --egs.dir='' \
     --cleanup.remove-egs=$remove_egs \
     --use-gpu=true \
     --feat-dir=$train_data_dir \
@@ -185,11 +185,13 @@ if [ $stage -le 14 ]; then
   frames_per_chunk=$(echo $chunk_width | cut -d, -f1)
   rm $dir/.error 2>/dev/null || true
 
-  for data in $test_sets; do
+  for affix in $test_sets; do
     (
+      test_ivector_dir=exp/nnet3/ivectors_$affix
       frames_per_chunk=$(echo $chunk_width | cut -d, -f1)
       data_affix=$(echo $data | sed s/test_//)
-      nj=$(wc -l <data/${data}_hires/spk2utt)
+      nj=$nj
+
       graph_dir=$gmm_dir/graph
       steps/nnet3/decode.sh \
         --extra-left-context $chunk_left_context \
@@ -199,11 +201,11 @@ if [ $stage -le 14 ]; then
         --frames-per-chunk $frames_per_chunk \
         --nj $nj --cmd "$decode_cmd"  --num-threads 1 \
         --online-ivector-dir $test_ivector_dir \
-        $graph_dir data/${data}_hires ${dir}/decode || exit 1
-      steps/lmrescore.sh --cmd "$decode_cmd" data/lang_test \
-        data/${data}_hires ${dir}/decode || exit 1
+        $graph_dir data/$affix/mfcc40 ${dir}/decode_3gram_mincount_$affix || exit 1
+      steps/lmrescore.sh --cmd "$decode_cmd" data/lang_{3,4}gram-mincount_test \
+        data/$affix/mfcc40 ${dir}/decode_rescore_{3,4}gram_mincount_$affix || exit 1
       steps/lmrescore_const_arpa.sh --cmd "$decode_cmd" \
-        data/lang_test data/${data}_hires ${dir}/decode || exit 1
+        data/lang_4gram-mincount_test data/$affix/mfcc40 ${dir}/decode_rescore_const_arpa_$affix || exit 1
     ) || touch $dir/.error &
   done
   wait
