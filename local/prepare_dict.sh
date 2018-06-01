@@ -11,13 +11,14 @@
 
 stage=0
 vocabulary_size=50000
+dict_dir=data/local/dict
+
 
 . ./path.sh
 . ./utils/parse_options.sh
 echo $0 
 
 
-dict_dir=data/local/dict
 lm_text=$dict_dir/text
 
 
@@ -41,18 +42,17 @@ if [ $stage -le 0 ] ; then
   PYTHONIOENCODING=utf-8 python3 local/data/extract_wiki.py $wiki >> $lm_text || exit 1;
   PYTHONIOENCODING=utf-8 python3 local/data/extract_ptt.py  $ptt >> $lm_text || exit 1;
 fi
-i
 
 if [ $stage -le 1 ] ; then
   # Limit vocabulary size 
   PYTHONIOENCODING=utf-8 python3 local/data/extract_words.py $vocabulary_size $lm_text | sort -u > $dict_dir/words.txt
   # split into English and Chinese
   
-  cat $dict_dir/words.txt | grep '[a-zA-Z]' > $dict_dir/lexicon-en/words-en.txt || exit 1;
-  cat $dict_dir/words.txt | grep -v '[a-zA-Z]' > $dict_dir/lexicon-ch/words-ch.txt || exit 1;
 fi
 
 if [ $stage -le 2 ] ; then
+  cat $dict_dir/words.txt | grep '[a-zA-Z]' > $dict_dir/lexicon-en/words-en.txt || exit 1;
+  cat $dict_dir/words.txt | grep -v '[a-zA-Z]' > $dict_dir/lexicon-ch/words-ch.txt || exit 1;
   ##### produce pronunciations for english
   if [ ! -f $dict_dir/cmudict/cmudict.0.7a ]; then
     echo "--- Downloading CMU dictionary ..."

@@ -5,25 +5,21 @@ if [ -f ./path.sh ]; then . ./path.sh; fi
 
 silprob=0.5
 
-lm_type=4gram-mincount
-dir=data/local/lm
-add_ABCD=true
-
+arpa_lm=data/local/lm/3gram-mincount/lm_pr4.0.gz
+lang_test=data/lang_3small_test
+arpa_lm=$1
+lang_test=$2
 . ./utils/parse_options.sh
 
-arpa_lm=$dir/$lm_type/lm_unpruned.gz
-lang_test=data/lang_$lm_type\_test
 
-if [ $add_ABCD = true ] ; then
-  arpa_lm=$dir/$lm_type/lm_unpruned_ABCD.gz
-  lang_test=data/lang_$lm_type\_ABCD_test
-fi
 
 [ ! -f $arpa_lm ] && echo No such file $arpa_lm && exit 1;
 
 
 rm -r $lang_test
 cp -r data/lang $lang_test
+
+echo $arpa_lm
 
 gunzip -c "$arpa_lm" | \
   arpa2fst --disambig-symbol=#0 \
