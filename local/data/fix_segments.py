@@ -15,14 +15,14 @@ if __name__ == '__main__':
     s3 = s1 - s2
     for scp in ['text','utt2spk','spk2utt','segments']:
         all_lines = []
-        with open(os.path.join(data_path,scp),'r') as f:
+        with open(os.path.join(data_path,scp),'r',encoding='utf-8') as f:
             for line in f:
                 token = line.split()[0]
                 if token in s3:
                     continue
                 else:
                     all_lines.append(line)
-        with open(os.path.join(data_path,scp),'w') as f:
+        with open(os.path.join(data_path,scp),'w',encoding='utf-8') as f:
             for line in all_lines:
                 f.write(line)
 

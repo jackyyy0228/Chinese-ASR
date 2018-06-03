@@ -8,3 +8,4 @@ seame=/home/jacky/work/kgb/corpus/seame
 Tl=/home/jacky/work/kgb/corpus/TlAlphaDigit
 wiki=/home/jacky/work/kgb/corpus/wiki
 ptt=/home/jacky/work/kgb/corpus/ptt
+MATBN=/home/jacky/work/kgb/corpus/MATBN

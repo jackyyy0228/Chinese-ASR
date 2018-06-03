@@ -1,6 +1,6 @@
 #!/bin/bash
 AUDIO_DATA_PREP=false
-LANG_DATA_PREP=false
+LANG_DATA_PREP=true
 EXTRACT_MFCC=false
 
 TRAIN_MONO=true
@@ -23,15 +23,24 @@ fi
 if [ $LANG_DATA_PREP = true ] ; then
   echo "Preparing lang data..."
   #prepare dictionary lexicon
-  #local/prepare_dict.sh --vocabulary-size 30000 --dict_dir data/local/dict --stage 2 || exit 1
+  local/prepare_dict.sh --vocabulary-size 30000 --dict_dir data/local/dict --stage 2 || exit 1
   # Phone Sets, questions, L compilation                                                                                                      
-  #utils/prepare_lang.sh data/local/dict "<UNK>" data/local/lang data/lang
+  utils/prepare_lang.sh data/local/dict "<UNK>" data/local/lang data/lang
+  
   # LM training
-  #local/train_lms.sh --lm-type 3gram-mincount
+  local/train_lms.sh --lm-type 3gram-mincount
   # LM pruning : to ensure G.fst < 70Mb
-  #prune_lm.sh --arpa 4.0 ./data/local/lm/3gram-mincount
+  prune_lm.sh --arpa 10.0 ./data/local/lm/4gram-mincount
   #G compilation, check LG composition
+  local/format_data.sh data/local/lm/3gram-mincount/lm_pr10.0.gz data/lang_3small_test
+  #LM (middle size)
+  prune_lm.sh --arpa 4.0 ./data/local/lm/4gram-mincount
   local/format_data.sh data/local/lm/3gram-mincount/lm_pr4.0.gz data/lang_3mid_test
+  #4-gram LM (the largest)
+  local/train_lms.sh --lm-type 4gram-mincount
+  prune_lm.sh --arpa 10.0 ./data/local/lm/4gram-mincount
+  local/format_data.sh data/local/lm/4gram-mincount/lm_pr10.0.gz data/lang_4large_test
+  
 fi
 exit 1
 
