@@ -42,7 +42,6 @@ if [ $LANG_DATA_PREP = true ] ; then
   local/format_data.sh data/local/lm/4gram-mincount/lm_pr10.0.gz data/lang_4large_test
   
 fi
-exit 1
 
 
 if [ $EXTRACT_MFCC = true ] ; then
@@ -130,7 +129,7 @@ if [ $TRAIN_TRI = true ] ; then
  for affix in $testdata_affix ; do
    steps/decode_fmllr.sh --cmd "$decode_cmd" --config conf/decode.config --nj $nj \
      $exp_dir/tri4a/graph data/$affix/mfcc39_pitch9 $exp_dir/tri4a/decode_3small_$affix
-   steps/lmrescore.sh --cmd "$decode_cmd" data/lang_3{small,mid}_test
+   steps/lmrescore.sh --cmd "$decode_cmd" data/lang_3{small,mid}_test \
      data/$affix/mfcc39_pitch9 exp/tri4a/decode_3{small,mid}_$affix
  done
 
@@ -140,13 +139,13 @@ if [ $TRAIN_TRI = true ] ; then
  # Building a larger SAT system.
 
  steps/train_sat.sh --cmd "$train_cmd" \
-   5000 120000 $traindata data/lang $exp_dir/tri4a_ali $exp_dir/tri5a || exit 1;
+   5000 80000 $traindata data/lang $exp_dir/tri4a_ali $exp_dir/tri5a || exit 1;
 
- utils/mkgraph.sh data/lang_3gram-mincount_test $exp_dir/tri5a $exp_dir/tri5a/graph || exit 1;
+ utils/mkgraph.sh data/lang_3small_test $exp_dir/tri5a $exp_dir/tri5a/graph || exit 1;
  for affix in $testdata_affix ; do
    steps/decode_fmllr.sh --cmd "$decode_cmd" --config conf/decode.config --nj $nj \
      $exp_dir/tri5a/graph data/$affix/mfcc39_pitch9 $exp_dir/tri5a/decode_3small_$affix
-   steps/lmrescore.sh --cmd "$decode_cmd" data/lang_3{small,mid}_test
+   steps/lmrescore.sh --cmd "$decode_cmd" data/lang_3{small,mid}_test \
      data/$affix/mfcc39_pitch9 exp/tri4a/decode_3{small,mid}_$affix
  done
 
@@ -158,5 +157,5 @@ if [ $TRAIN_CHAIN = true ] ; then
   local/nnet3/run_ivector_common.sh --gmm $exp_dir/tri5a --nj $nj --traindata data/train
   local/nnet3/run_tdnn_lstm.sh 
 fi
-
-
+## Show all the performance of the aboves models
+local/show_all_cer.sh
