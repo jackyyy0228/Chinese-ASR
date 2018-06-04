@@ -57,6 +57,7 @@ mfcc_pitch_dir=`perl -e '($dir,$pwd)= @ARGV; if($dir!~m:^/:) { $dir = "$pwd/$dir
 if [ -z $name ]; then  
   name=`basename $data`
 fi
+echo "name $name" 
 
 mkdir -p $mfcc_pitch_dir || exit 1;
 mkdir -p $logdir || exit 1;

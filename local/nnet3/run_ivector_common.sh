@@ -50,13 +50,13 @@ if [ $stage -le 5 ]; then
   # Although the nnet will be trained by high resolution data,
   # we still have to perturbe the normal data to get the alignment
   # _sp stands for speed-perturbed
-  utils/perturb_data_dir_speed.sh 0.9 $traindata/mfcc40 data/temp1
-  utils/perturb_data_dir_speed.sh 1.0 $traindata/mfcc40 data/temp2
-  utils/perturb_data_dir_speed.sh 1.1 $traindata/mfcc40 data/temp3
-  utils/combine_data.sh --extra-files utt2uniq $traindata\_sp/mfcc40 data/temp1 data/temp2 data/temp3
+  utils/perturb_data_dir_speed.sh 0.9 $traindata/mfcc39_pitch9 data/temp1
+  utils/perturb_data_dir_speed.sh 1.0 $traindata/mfcc39_pitch9 data/temp2
+  utils/perturb_data_dir_speed.sh 1.1 $traindata/mfcc39_pitch9 data/temp3
+  utils/combine_data.sh --extra-files utt2uniq $traindata\_sp/mfcc39_pitch9 data/temp1 data/temp2 data/temp3
   rm -r data/temp1 data/temp2 data/temp3
 
-  mfccdir=data/mfcc_pitch
+  mfccdir=data/mfcc_pitch_sp
   
   name=`basename $traindata\_sp`
 
@@ -67,14 +67,14 @@ if [ $stage -le 5 ]; then
   utils/fix_data_dir.sh $traindata\_sp/mfcc39_pitch9
 
   $align_script --nj $nj --cmd "$train_cmd" \
-    data/cyberon_train_sp data/lang $gmm_dir ${gmm_dir}_sp_ali || exit 1
+    $traindata\_sp/mfcc39_pitch9 data/lang $gmm_dir ${gmm_dir}_sp_ali || exit 1
 
   # Now perturb the high resolution data
-  utils/copy_data_dir.sh data/train_sp data/train_sp_hires
-  
-  mfccdir=data/mfcc_hires_pitch
+  utils/copy_data_dir.sh $traindata\_sp/mfcc39_pitch9 $traindata\_sp/mfcc40_pitch3
 
-  steps/make_mfcc_pitch_online.sh --cmd "$train_cmd" --nj $nj --mfcc-config conf/mfcc_hires.conf --name $name\
+  mfccdir=data/mfcc_hires_pitch_sp
+
+  steps/make_mfcc_pitch_online.sh --cmd "$train_cmd" --nj $nj --mfcc-config conf/mfcc_hires.conf --name $name \
     $traindata\_sp/mfcc40_pitch3 exp/make_hires/$name $mfccdir || exit 1;
   steps/compute_cmvn_stats.sh --name $name exp/make_hires/$x $mfccdir || exit 1;
 
@@ -87,6 +87,7 @@ if [ $stage -le 5 ]; then
   steps/compute_cmvn_stats.sh --name $name $traindata\_sp/mfcc40 exp/make_hires/$name $mfccdir || exit 1;
 
   utils/fix_data_dir.sh $traindata\_sp/mfcc40
+  exit 1
 fi
 
 if [ -z $ivector_extractor ]; then
