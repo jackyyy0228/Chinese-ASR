@@ -65,7 +65,7 @@ if [ $TRAIN_MONO = true ] ; then
  utils/mkgraph.sh data/lang_3small_test $exp_dir/mono0a $exp_dir/mono0a/graph || exit 1
  for affix in $testdata_affix ; do
    steps/decode.sh --cmd "$decode_cmd" --config conf/decode.config --nj $nj \
-     $exp_dir/mono0a/graph data/$affix/mfcc39_pitch9 $exp_dir/mono0a/decode_3gram_mincount_$affix
+     $exp_dir/mono0a/graph data/$affix/mfcc39_pitch9 $exp_dir/mono0a/decode_3small_$affix
  done
  
  # Get alignments from monophone system.
@@ -84,7 +84,7 @@ if [ $TRAIN_TRI = true ] ; then
  utils/mkgraph.sh data/lang_3small_test $exp_dir/tri1 $exp_dir/tri1/graph || exit 1;
  for affix in $testdata_affix ; do
    steps/decode.sh --cmd "$decode_cmd" --config conf/decode.config --nj $nj \
-     $exp_dir/tri1/graph data/$affix/mfcc39_pitch9 $exp_dir/tri1/decode_3gram_mincount_$affix
+     $exp_dir/tri1/graph data/$affix/mfcc39_pitch9 $exp_dir/tri1/decode_3small_$affix
  done
 
  # align tri1
@@ -99,7 +99,7 @@ if [ $TRAIN_TRI = true ] ; then
  utils/mkgraph.sh data/lang_3small_test $exp_dir/tri2 $exp_dir/tri2/graph
  for affix in $testdata_affix ; do
    steps/decode.sh --cmd "$decode_cmd" --config conf/decode.config --nj $nj \
-     $exp_dir/tri2/graph data/$affix/mfcc39_pitch9 $exp_dir/tri2/decode_3gram_mincount_$affix
+     $exp_dir/tri2/graph data/$affix/mfcc39_pitch9 $exp_dir/tri2/decode_3small_$affix
  done
 
  # train and decode tri2b [LDA+MLLT]
@@ -114,7 +114,7 @@ if [ $TRAIN_TRI = true ] ; then
  utils/mkgraph.sh data/lang_3small_test $exp_dir/tri3a $exp_dir/tri3a/graph || exit 1;
  for affix in $testdata_affix ; do
    steps/decode.sh --cmd "$decode_cmd" --config conf/decode.config --nj $nj \
-     $exp_dir/tri3a/graph data/$affix/mfcc39_pitch9 $exp_dir/tri3a/decode_3gram_mincount_$affix
+     $exp_dir/tri3a/graph data/$affix/mfcc39_pitch9 $exp_dir/tri3a/decode_3small_$affix
  done
  # From now, we start building a more serious system (with SAT), and we"ll
  # do the alignment with fMLLR.

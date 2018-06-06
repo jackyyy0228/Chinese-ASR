@@ -76,7 +76,7 @@ if [ $stage -le 5 ]; then
 
   steps/make_mfcc_pitch_online.sh --cmd "$train_cmd" --nj $nj --mfcc-config conf/mfcc_hires.conf --name $name \
     $traindata\_sp/mfcc40_pitch3 exp/make_hires/$name $mfccdir || exit 1;
-  steps/compute_cmvn_stats.sh --name $name exp/make_hires/$x $mfccdir || exit 1;
+  steps/compute_cmvn_stats.sh $traindata\_sp/mfcc40_pitch3 --name $name exp/make_hires/$name $mfccdir || exit 1;
 
   utils/fix_data_dir.sh $traindata\_sp/mfcc40_pitch3
   
@@ -117,10 +117,10 @@ fi
 
 if [ $stage -le 7 ]; then
   rm -f exp/nnet3/.error 2>/dev/null
-  testdata_affix="TOCFL cyberon_english_test cyberon_chinese_test"
+  testdata_affix="TOCFL cyberon_chinese_test"
   for affix in $testdata_affix ; do
     steps/online/nnet2/extract_ivectors_online.sh --cmd "$train_cmd" --nj $nj \
-       data/$testdata_affix/mfcc40 $ivector_extractor exp/nnet3/ivectors_$affix || touch exp/nnet3/.error &
+       data/$affix/mfcc40 $ivector_extractor exp/nnet3/ivectors_$affix || touch exp/nnet3/.error &
   done
 
   wait

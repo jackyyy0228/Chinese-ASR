@@ -53,8 +53,7 @@ set -e -o pipefail
 # (some of which are also used in this script directly).
 stage=2
 nj=8
-train_set=cyberon_train
-test_sets="cyberon_chinese_test cyberon_english_test TOCFL"
+test_sets="cyberon_chinese_test TOCFL"
 gmm=tri5a        # this is the source gmm-dir that we'll use for alignments; it
                  # should have alignments for the specified training data.
 num_threads_ubm=1
@@ -157,7 +156,7 @@ if [ $stage -le 13 ]; then
     --feat.cmvn-opts="--norm-means=false --norm-vars=false" \
     --trainer.srand=$srand \
     --trainer.max-param-change=2.0 \
-    --trainer.num-epochs=6 \
+    --trainer.num-epochs=2 \
     --trainer.deriv-truncate-margin=10 \
     --trainer.samples-per-iter=20000 \
     --trainer.optimization.num-jobs-initial=2 \
@@ -201,11 +200,9 @@ if [ $stage -le 14 ]; then
         --frames-per-chunk $frames_per_chunk \
         --nj $nj --cmd "$decode_cmd"  --num-threads 1 \
         --online-ivector-dir $test_ivector_dir \
-        $graph_dir data/$affix/mfcc40 ${dir}/decode_3gram_mincount_$affix || exit 1
-      steps/lmrescore.sh --cmd "$decode_cmd" data/lang_{3,4}gram-mincount_test \
-        data/$affix/mfcc40 ${dir}/decode_rescore_{3,4}gram_mincount_$affix || exit 1
-      steps/lmrescore_const_arpa.sh --cmd "$decode_cmd" \
-        data/lang_4gram-mincount_test data/$affix/mfcc40 ${dir}/decode_rescore_const_arpa_$affix || exit 1
+        $graph_dir data/$affix/mfcc40 ${dir}/decode_3small_$affix || exit 1
+      steps/lmrescore.sh --cmd "$decode_cmd" data/lang_3{small,mid}_$affix \
+        data/$affix/mfcc40 ${dir}/decode_3{small,mid}_$affix || exit 1
     ) || touch $dir/.error &
   done
   wait

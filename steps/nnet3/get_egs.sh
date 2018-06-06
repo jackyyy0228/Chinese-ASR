@@ -12,8 +12,6 @@
 # right, and this ends up getting shared.  This is at the expense of slightly
 # higher disk I/O while training.
 
-set -o pipefail
-trap "" PIPE
 
 # Begin configuration section.
 cmd=run.pl
