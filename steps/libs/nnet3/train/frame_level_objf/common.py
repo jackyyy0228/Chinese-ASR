@@ -220,13 +220,14 @@ def train_one_iteration(dir, iter, srand, egs_dir,
 
     # Sets off some background jobs to compute train and
     # validation set objectives
+    '''
     compute_train_cv_probabilities(
         dir=dir, iter=iter, egs_dir=egs_dir,
         run_opts=run_opts,
         get_raw_nnet_from_am=get_raw_nnet_from_am,
         use_multitask_egs=use_multitask_egs,
         compute_per_dim_accuracy=compute_per_dim_accuracy)
-
+    '''
     if iter > 0:
         # Runs in the background
         compute_progress(dir=dir, iter=iter, egs_dir=egs_dir,
@@ -423,6 +424,19 @@ def compute_train_cv_probabilities(dir, iter, egs_dir, run_opts,
                              egs_prefix="train_diagnostic.",
                              use_multitask_egs=use_multitask_egs)
 
+    common_lib.background_command("nnet3-copy-egs {multitask_egs_opts} \
+                       {egs_rspecifier} ark:- | \
+                       nnet3-merge-egs --minibatch-size=1:64 ark:- \
+                       ark:{dir}/tmp/{iter} |".format(dir=dir,iter=iter,egs_rspecifier=egs_rspecifier,
+                                        multitask_egs_opts=multitask_egs_opts))
+    common_lib.background_command(
+        """{command} {dir}/log/compute_prob_train.{iter}.log \
+                nnet3-compute-prob {opts} "{model}" \
+                "ark,bg:{dir}/tmp/{iter} """.format(command=run_opts.command,
+                                        dir=dir,
+                                        iter=iter,
+                                        opts=' '.join(opts), model=model))
+    '''
     common_lib.background_command(
         """{command} {dir}/log/compute_prob_train.{iter}.log \
                 nnet3-compute-prob {opts} "{model}" \
@@ -435,6 +449,7 @@ def compute_train_cv_probabilities(dir, iter, egs_dir, run_opts,
                                         egs_rspecifier=egs_rspecifier,
                                         opts=' '.join(opts), model=model,
                                         multitask_egs_opts=multitask_egs_opts))
+    '''
 
 
 def compute_progress(dir, iter, egs_dir,

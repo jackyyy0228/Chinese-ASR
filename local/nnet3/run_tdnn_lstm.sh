@@ -54,7 +54,7 @@ set -e -o pipefail
 stage=2
 nj=8
 test_sets="cyberon_chinese_test TOCFL"
-gmm=tri5a        # this is the source gmm-dir that we'll use for alignments; it
+gmm=tri4a        # this is the source gmm-dir that we'll use for alignments; it
                  # should have alignments for the specified training data.
 num_threads_ubm=1
 nnet3_affix=       # affix for exp dirs, e.g. it was _cleaned in tedlium.
@@ -84,7 +84,7 @@ test_online_decoding=false  # if true, it will run the last decoding stage.
 . ./path.sh
 . ./utils/parse_options.sh
 
-if  ! cuda-compiled; then
+if   cuda-compiled; then
   cat <<EOF && exit 1
 This script is intended to be used with GPUs but you have not compiled Kaldi with CUDA
 If you want to use GPUs (and have them), go to src/, and configure and make on a machine
@@ -102,12 +102,13 @@ dir=exp/nnet3${nnet3_affix}/tdnn_lstm${affix}_sp
 train_data_dir=data/train_sp/mfcc40
 train_ivector_dir=exp/nnet3/ivectors_train_sp
 
-for f in $train_data_dir/feats.scp $train_ivector_dir/ivector_online.scp \
-    $gmm_dir/graph/HCLG.fst \
-    $ali_dir/ali.1.gz $gmm_dir/final.mdl; do
-  [ ! -f $f ] && echo "$0: expected file $f to exist" && exit 1
-done
-
+if [ $stage -le 12 ]; then
+  for f in $train_data_dir/feats.scp $train_ivector_dir/ivector_online.scp \
+      $gmm_dir/graph/HCLG.fst \
+      $ali_dir/ali.1.gz $gmm_dir/final.mdl; do
+    [ ! -f $f ] && echo "$0: expected file $f to exist" && exit 1
+  done
+fi
 if [ $stage -le 12 ]; then
   mkdir -p $dir
   echo "$0: creating neural net configs using the xconfig parser";
@@ -145,11 +146,7 @@ fi
 
 
 if [ $stage -le 13 ]; then
-  if [[ $(hostname -f) == *.clsp.jhu.edu ]] && [ ! -d $dir/egs/storage ]; then
-    utils/create_split_dir.pl \
-     /export/b0{3,4,5,6}/$USER/kaldi-data/egs/tedlium-$(date +'%m_%d_%H_%M')/s5_r2/$dir/egs/storage $dir/egs/storage
-  fi
-
+  mkdir -p $dir/tmp
   python2 steps/nnet3/train_rnn.py --stage=$train_stage \
     --cmd="$decode_cmd" \
     --feat.online-ivector-dir=$train_ivector_dir \
@@ -200,15 +197,28 @@ if [ $stage -le 14 ]; then
         --frames-per-chunk $frames_per_chunk \
         --nj $nj --cmd "$decode_cmd"  --num-threads 1 \
         --online-ivector-dir $test_ivector_dir \
-        $graph_dir data/$affix/mfcc40 ${dir}/decode_3small_$affix || exit 1
-      steps/lmrescore.sh --cmd "$decode_cmd" data/lang_3{small,mid}_$affix \
-        data/$affix/mfcc40 ${dir}/decode_3{small,mid}_$affix || exit 1
-    ) || touch $dir/.error &
+        $graph_dir data/$affix/mfcc40_pitch3 ${dir}/decode_3small_$affix || exit 1
+      steps/lmrescore.sh --cmd "$decode_cmd" data/lang_3{small,mid}_test \
+        data/$affix/mfcc40_pitch3 ${dir}/decode_3{small,mid}_$affix || exit 1
+    ) || touch $dir/.error 
   done
-  wait
   [ -f $dir/.error ] && echo "$0: there was a problem while decoding" && exit 1
 fi
 #delete loop decoding
+if [ $stage -le 15 ]; then
+  rm $dir/.error 2>/dev/null || true
 
+  for affix in $test_sets ; do
+    test_ivector_dir=exp/nnet3/ivectors_$affix
+    graph_dir=$gmm_dir/graph                                     
+    steps/nnet3/decode_looped.sh \
+      --frames-per-chunk 30 \
+      --nj 12 --cmd "$decode_cmd" \
+      --online-ivector-dir $test_ivector_dir \
+      $graph_dir data/$affix/mfcc40_pitch3 ${dir}/decode_looped_3small_${affix} || exit 1
+  done                                                                       
+  steps/lmrescore.sh --cmd "$decode_cmd" data/lang_3{small,mid}_test \
+    data/$affix/mfcc40_pitch3 ${dir}/decode_looped_3{small,mid}_$affix || exit 1
+fi
 
 exit 0;

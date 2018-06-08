@@ -1,12 +1,9 @@
 #!/bin/bash
 
-for dir in ./data/*/*/; do
-  if [ -f $dir/wav.scp ] ; then
-    rm -r $dir/split*
-    for scp in cmvn.scp feats.scp ; do
-      cat $dir/$scp | sed 's/jacky\/work/jackyyy/g' > $dir/${scp}2
-      mv $dir/${scp}2 $dir/$scp
-      echo "Changing path of $dir/$scp"
-    done
-  fi
+for dir in exp/nnet3/ivectors_cyberon_chinese_test exp/nnet3/ivectors_TOCFL; do
+  for scp in $dir/*.scp ; do
+    cat $scp | sed 's/jackyyy/jacky\/work/g' > ${scp}2
+    mv ${scp}2 $scp
+    echo "Changing path of $dir/$scp"
+  done
 done

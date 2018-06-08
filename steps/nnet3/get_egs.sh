@@ -29,11 +29,11 @@ right_context_final=-1     # if >=0, right-context for last chunk of an utteranc
 compress=true   # set this to false to disable compression (e.g. if you want to see whether
                 # results are affected).
 
-num_utts_subset=300     # number of utterances in validation and training
+num_utts_subset=30     # number of utterances in validation and training
                         # subsets used for shrinkage and diagnostics.
 num_valid_frames_combine=0 # #valid frames for combination weights at the very end.
-num_train_frames_combine=60000 # # train frames for the above.
-num_frames_diagnostic=10000 # number of frames for "compute_prob" jobs
+num_train_frames_combine=30000 # # train frames for the above.
+num_frames_diagnostic=2000 # number of frames for "compute_prob" jobs
 samples_per_iter=400000 # this is the target number of egs in each archive of egs
                         # (prior to merging egs).  We probably should have called
                         # it egs_per_iter. This is just a guideline; it will pick
