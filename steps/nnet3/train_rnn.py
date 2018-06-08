@@ -374,7 +374,7 @@ def train(args, run_opts):
     logger.info("Training will run for {0} epochs = "
                 "{1} iterations".format(args.num_epochs, num_iters))
 
-    for iter in range(164,num_iters):
+    for iter in range(num_iters):
         if (args.exit_stage is not None) and (iter == args.exit_stage):
             logger.info("Exiting early due to --exit-stage {0}".format(iter))
             return

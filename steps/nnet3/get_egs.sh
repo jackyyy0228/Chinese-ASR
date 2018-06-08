@@ -330,6 +330,7 @@ if [ $stage -le 5 ]; then
   # shuffle the order, writing to the egs.JOB.ark
 
   # the input is a concatenation over the input jobs.
+  echo "test"  
   egs_list=
   for n in $(seq $nj); do
     egs_list="$egs_list $dir/egs_orig.$n.JOB.ark"
