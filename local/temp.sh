@@ -4,8 +4,6 @@
 
 # this script contains some common (shared) parts of the run_nnet*.sh scripts.
 
-. ./cmd.sh
-
 
 stage=0
 num_threads_ubm=1
@@ -21,6 +19,26 @@ set -e
 
 
 align_script=steps/align_fmllr.sh
+exp_dir=./exp
+
+steps/align_fmllr.sh  --cmd "$train_cmd" --nj $nj \
+ $traindata/mfcc39_pitch9 data/lang $exp_dir/tri4a $exp_dir/tri4a_ali
+
+# Building a larger SAT system.
+
+steps/train_sat.sh --cmd "$train_cmd" \
+ 5000 80000 $traindata/mfcc39_pitch9 data/lang $exp_dir/tri4a_ali $exp_dir/tri5a || exit 1;
+
+utils/mkgraph.sh data/lang_3small_test $exp_dir/tri5a $exp_dir/tri5a/graph || exit 1;
+for affix in $testdata_affix ; do
+ steps/decode_fmllr.sh --cmd "$decode_cmd" --config conf/decode.config --nj $nj \
+   $exp_dir/tri5a/graph data/$affix/mfcc39_pitch9 $exp_dir/tri5a/decode_3small_$affix
+ steps/lmrescore.sh --cmd "$decode_cmd" data/lang_3{small,mid}_test \
+   data/$affix/mfcc39_pitch9 exp/tri4a/decode_3{small,mid}_$affix
+done
+
+steps/align_fmllr.sh  --cmd "$train_cmd" --nj $nj \
+ $traindata/mfcc39_pitch9 data/lang $exp_dir/tri5a $exp_dir/tri5a_ali
 
 if [ $stage -le 2 ] && [ -z $ivector_extractor ]; then
   # Train a system just for its LDA+MLLT transform.  We use --num-iters 13
@@ -66,7 +84,7 @@ if [ $stage -le 5 ]; then
   steps/compute_cmvn_stats.sh --name $name $traindata\_sp/mfcc39_pitch9 exp/make_mfcc/$name $mfccdir || exit 1;
   
   utils/fix_data_dir.sh $traindata\_sp/mfcc39_pitch9
-
+  
   $align_script --nj $nj --cmd "$train_cmd" \
     $traindata\_sp/mfcc39_pitch9 data/lang $gmm_dir ${gmm_dir}_sp_ali || exit 1
 
@@ -88,7 +106,6 @@ if [ $stage -le 5 ]; then
   steps/compute_cmvn_stats.sh --name $name $traindata\_sp/mfcc40 exp/make_hires/$name $mfccdir || exit 1;
 
   utils/fix_data_dir.sh $traindata\_sp/mfcc40
-  exit 1
 fi
 
 if [ -z $ivector_extractor ]; then

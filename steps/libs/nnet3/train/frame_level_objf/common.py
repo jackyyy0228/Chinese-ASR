@@ -220,14 +220,12 @@ def train_one_iteration(dir, iter, srand, egs_dir,
 
     # Sets off some background jobs to compute train and
     # validation set objectives
-    '''
     compute_train_cv_probabilities(
         dir=dir, iter=iter, egs_dir=egs_dir,
         run_opts=run_opts,
         get_raw_nnet_from_am=get_raw_nnet_from_am,
         use_multitask_egs=use_multitask_egs,
         compute_per_dim_accuracy=compute_per_dim_accuracy)
-    '''
     if iter > 0:
         # Runs in the background
         compute_progress(dir=dir, iter=iter, egs_dir=egs_dir,
@@ -402,7 +400,6 @@ def compute_train_cv_probabilities(dir, iter, egs_dir, run_opts,
                              egs_dir,
                              egs_prefix="valid_diagnostic.",
                              use_multitask_egs=use_multitask_egs)
-
     common_lib.background_command(
         """ {command} {dir}/log/compute_prob_valid.{iter}.log \
                 nnet3-compute-prob "{model}" \
@@ -415,6 +412,22 @@ def compute_train_cv_probabilities(dir, iter, egs_dir, run_opts,
                                         egs_rspecifier=egs_rspecifier,
                                         opts=' '.join(opts), model=model,
                                         multitask_egs_opts=multitask_egs_opts))
+    '''
+    print("WARNING : compute prob")
+    common_lib.background_command(""" "nnet3-copy-egs {multitask_egs_opts} \
+                       {egs_rspecifier} ark:- | \
+                       nnet3-merge-egs --minibatch-size=1:64 ark:- \
+                       ark:{dir}/tmp/valid.{iter} " """.format(dir=dir,iter=iter,egs_rspecifier=egs_rspecifier,
+                                        multitask_egs_opts=multitask_egs_opts))
+    print("WARNING : copy-egs")
+    common_lib.background_command(
+        """{command} {dir}/log/compute_prob_valid.{iter}.log \
+                nnet3-compute-prob {opts} "{model}" \
+                "ark,bg:{dir}/tmp/train.{iter} """.format(command=run_opts.command,
+                                        dir=dir,
+                                        iter=iter,
+                                        opts=' '.join(opts), model=model))
+    '''
 
     egs_rspecifier = ("{0}:{1}/train_diagnostic{2}".format(
         scp_or_ark, egs_dir, egs_suffix))
@@ -423,16 +436,16 @@ def compute_train_cv_probabilities(dir, iter, egs_dir, run_opts,
                              egs_dir,
                              egs_prefix="train_diagnostic.",
                              use_multitask_egs=use_multitask_egs)
-
-    common_lib.background_command("nnet3-copy-egs {multitask_egs_opts} \
+    '''
+    common_lib.background_command("""nnet3-copy-egs {multitask_egs_opts} \
                        {egs_rspecifier} ark:- | \
                        nnet3-merge-egs --minibatch-size=1:64 ark:- \
-                       ark:{dir}/tmp/{iter} |".format(dir=dir,iter=iter,egs_rspecifier=egs_rspecifier,
+                       ark:{dir}/tmp/train.{iter} """.format(dir=dir,iter=iter,egs_rspecifier=egs_rspecifier,
                                         multitask_egs_opts=multitask_egs_opts))
     common_lib.background_command(
         """{command} {dir}/log/compute_prob_train.{iter}.log \
                 nnet3-compute-prob {opts} "{model}" \
-                "ark,bg:{dir}/tmp/{iter} """.format(command=run_opts.command,
+                "ark,bg:{dir}/tmp/train.{iter} """.format(command=run_opts.command,
                                         dir=dir,
                                         iter=iter,
                                         opts=' '.join(opts), model=model))
@@ -449,7 +462,6 @@ def compute_train_cv_probabilities(dir, iter, egs_dir, run_opts,
                                         egs_rspecifier=egs_rspecifier,
                                         opts=' '.join(opts), model=model,
                                         multitask_egs_opts=multitask_egs_opts))
-    '''
 
 
 def compute_progress(dir, iter, egs_dir,

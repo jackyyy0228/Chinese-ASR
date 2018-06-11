@@ -75,7 +75,7 @@ chunk_right_context=0
 
 # training options
 srand=0
-remove_egs=true
+remove_egs=false
 
 #decode options
 test_online_decoding=false  # if true, it will run the last decoding stage.
@@ -84,11 +84,11 @@ test_online_decoding=false  # if true, it will run the last decoding stage.
 . ./path.sh
 . ./utils/parse_options.sh
 
-if  ! cuda-compiled; then
-  cat <<EOF && exit 1
-This script is intended to be used with GPUs but you have not compiled Kaldi with CUDA
-If you want to use GPUs (and have them), go to src/, and configure and make on a machine
-where "nvcc" is installed.
+if ! cuda-compiled; then
+    cat <<EOF && exit 1
+  This script is intended to be used with GPUs but you have not compiled Kaldi with CUDA
+  If you want to use GPUs (and have them), go to src/, and configure and make on a machine
+  where "nvcc" is installed.
 EOF
 fi
 
@@ -98,7 +98,7 @@ fi
 gmm_dir=exp/${gmm}
 ali_dir=exp/${gmm}_sp_ali
 lang=data/lang
-dir=exp/nnet3${nnet3_affix}/tdnn_lstm${affix}_sp
+dir=exp/nnet3${nnet3_affix}/tdnn_lstm_sp_2
 train_data_dir=data/train_sp/mfcc40_pitch3
 train_ivector_dir=exp/nnet3/ivectors_train_sp
 
@@ -152,7 +152,7 @@ if [ $stage -le 13 ]; then
     --feat.cmvn-opts="--norm-means=false --norm-vars=false" \
     --trainer.srand=$srand \
     --trainer.max-param-change=2.0 \
-    --trainer.num-epochs=2 \
+    --trainer.num-epochs=4 \
     --trainer.deriv-truncate-margin=10 \
     --trainer.samples-per-iter=20000 \
     --trainer.optimization.num-jobs-initial=2 \
@@ -167,9 +167,7 @@ if [ $stage -le 13 ]; then
     --egs.chunk-right-context=$chunk_right_context \
     --egs.chunk-left-context-initial=0 \
     --egs.chunk-right-context-final=0 \
-    --egs.dir="" \
-    --stage=-4 \
-    --egs.stage=5 \
+    --egs.dir="$dir/egs" \
     --cleanup.remove-egs=$remove_egs \
     --use-gpu=true \
     --feat-dir=$train_data_dir \
@@ -188,7 +186,7 @@ if [ $stage -le 14 ]; then
       test_ivector_dir=exp/nnet3/ivectors_$affix
       frames_per_chunk=$(echo $chunk_width | cut -d, -f1)
       data_affix=$(echo $data | sed s/test_//)
-      nj=$nj
+      nj=4
       graph_dir=$gmm_dir/graph
       
       startt=`date +%s`
