@@ -139,7 +139,7 @@ if [ $TRAIN_TRI = true ] ; then
  # Building a larger SAT system.
 
  steps/train_sat.sh --cmd "$train_cmd" \
-   5000 80000 $traindata data/lang $exp_dir/tri4a_ali $exp_dir/tri5a || exit 1;
+   5000 50000 $traindata data/lang $exp_dir/tri4a_ali $exp_dir/tri5a || exit 1;
 
  utils/mkgraph.sh data/lang_3small_test $exp_dir/tri5a $exp_dir/tri5a/graph || exit 1;
  for affix in $testdata_affix ; do

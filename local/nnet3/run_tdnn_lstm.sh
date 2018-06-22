@@ -53,7 +53,7 @@ set -e -o pipefail
 # (some of which are also used in this script directly).
 stage=2
 nj=8
-test_sets="cyberon_chinese_test TOCFL"
+test_sets="TOCFL cyberon_chinese_test"
 gmm=tri4a        # this is the source gmm-dir that we'll use for alignments; it
                  # should have alignments for the specified training data.
 num_threads_ubm=1
@@ -98,15 +98,20 @@ fi
 gmm_dir=exp/${gmm}
 ali_dir=exp/${gmm}_sp_ali
 lang=data/lang
-dir=exp/nnet3${nnet3_affix}/tdnn_lstm_sp_2
-train_data_dir=data/train_sp/mfcc40_pitch3
-train_ivector_dir=exp/nnet3/ivectors_train_sp
+dir=exp/nnet3${nnet3_affix}/tdnn_lstm_no_eng_nnet_align
+train_data_dir=data/train_no_eng_sp/mfcc40_pitch3
+train_ivector_dir=exp/nnet3/ivectors_train_no_eng_sp
+
+srcdir=exp/nnet3${nnet3_affix}/tdnn_lstm_no_eng
+ali_dir=${srcdir}_ali
+
 
 for f in $train_data_dir/feats.scp $train_ivector_dir/ivector_online.scp \
     $gmm_dir/graph/HCLG.fst \
     $ali_dir/ali.1.gz $gmm_dir/final.mdl; do
   [ ! -f $f ] && echo "$0: expected file $f to exist" && exit 1
 done
+
 
 if [ $stage -le 12 ]; then
   mkdir -p $dir
@@ -167,7 +172,7 @@ if [ $stage -le 13 ]; then
     --egs.chunk-right-context=$chunk_right_context \
     --egs.chunk-left-context-initial=0 \
     --egs.chunk-right-context-final=0 \
-    --egs.dir="$dir/egs" \
+    --egs.dir="" \
     --cleanup.remove-egs=$remove_egs \
     --use-gpu=true \
     --feat-dir=$train_data_dir \
@@ -178,6 +183,42 @@ if [ $stage -le 13 ]; then
 fi
 
 if [ $stage -le 14 ]; then
+  rm $dir/.error 2>/dev/null || true
+  for affix in $test_sets ; do
+    test_ivector_dir=exp/nnet3/ivectors_$affix
+    graph_dir=$gmm_dir/graph                                     
+    
+    startt=`date +%s`
+    echo $startt 
+    steps/nnet3/decode_looped.sh \
+      --frames-per-chunk 30 \
+      --nj 12 --cmd "$decode_cmd" \
+      --online-ivector-dir $test_ivector_dir \
+      $graph_dir data/$affix/mfcc40_pitch3 ${dir}/decode_looped_3small_${affix} || exit 1
+    
+    endt=`date +%s`
+    runtime=$((endt-startt))
+    echo "Decode_loop time of $affix: $runtime"
+    
+    startt=`date +%s`
+    steps/lmrescore.sh --cmd "$decode_cmd" data/lang_3{small,mid}_test \
+      data/$affix/mfcc40_pitch3 ${dir}/decode_looped_3{small,mid}_$affix || exit 1
+    
+    endt=`date +%s`
+    runtime=$((endt-startt))
+    echo "Decode_loop rescoring time of $affix: $runtime"
+    
+    startt=`date +%s`
+    steps/lmrescore.sh --cmd "$decode_cmd" data/lang_{3mid,4large}_test \
+      data/$affix/mfcc40_pitch3 ${dir}/decode_looped_{3mid,4large}_$affix || exit 1
+    
+    endt=`date +%s`
+    runtime=$((endt-startt))
+    echo "Decode_loop rescoring time of $affix: $runtime"
+  done                                                                       
+fi
+
+if [ $stage -le 15 ]; then
   frames_per_chunk=$(echo $chunk_width | cut -d, -f1)
   rm $dir/.error 2>/dev/null || true
 
@@ -216,32 +257,5 @@ if [ $stage -le 14 ]; then
   [ -f $dir/.error ] && echo "$0: there was a problem while decoding" && exit 1
 fi
 
-if [ $stage -le 15 ]; then
-  rm $dir/.error 2>/dev/null || true
-  for affix in $test_sets ; do
-    test_ivector_dir=exp/nnet3/ivectors_$affix
-    graph_dir=$gmm_dir/graph                                     
-    
-    startt=`date +%s`
-    echo $startt 
-    steps/nnet3/decode_looped.sh \
-      --frames-per-chunk 30 \
-      --nj 12 --cmd "$decode_cmd" \
-      --online-ivector-dir $test_ivector_dir \
-      $graph_dir data/$affix/mfcc40_pitch3 ${dir}/decode_looped_3small_${affix} || exit 1
-    
-    endt=`date +%s`
-    runtime=$((endt-startt))
-    echo "Decode_loop time of $affix: $runtime"
-    
-    startt=`date +%s`
-    steps/lmrescore.sh --cmd "$decode_cmd" data/lang_3{small,mid}_test \
-      data/$affix/mfcc40_pitch3 ${dir}/decode_looped_3{small,mid}_$affix || exit 1
-    
-    endt=`date +%s`
-    runtime=$((endt-startt))
-    echo "Decode_loop rescoring time of $affix: $runtime"
-  done                                                                       
-fi
 
 exit 0;

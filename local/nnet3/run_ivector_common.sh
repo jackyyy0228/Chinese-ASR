@@ -77,7 +77,7 @@ if [ $stage -le 5 ]; then
 
   steps/make_mfcc_pitch_online.sh --cmd "$train_cmd" --nj $nj --mfcc-config conf/mfcc_hires.conf --name $name \
     $traindata\_sp/mfcc40_pitch3 exp/make_hires/$name $mfccdir || exit 1;
-  steps/compute_cmvn_stats.sh $traindata\_sp/mfcc40_pitch3 --name $name exp/make_hires/$name $mfccdir || exit 1;
+  steps/compute_cmvn_stats.sh --name $name $traindata\_sp/mfcc40_pitch3 exp/make_hires/$name $mfccdir || exit 1;
 
   utils/fix_data_dir.sh $traindata\_sp/mfcc40_pitch3
   
@@ -88,7 +88,6 @@ if [ $stage -le 5 ]; then
   steps/compute_cmvn_stats.sh --name $name $traindata\_sp/mfcc40 exp/make_hires/$name $mfccdir || exit 1;
 
   utils/fix_data_dir.sh $traindata\_sp/mfcc40
-  exit 1
 fi
 
 if [ -z $ivector_extractor ]; then

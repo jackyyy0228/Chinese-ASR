@@ -10,7 +10,7 @@ num_threads_ubm=1
 ivector_extractor=
 nj=8
 traindata=./data/train_no_eng
-gmm_dir=exp/tri5a
+gmm_dir=exp/tri4a
 set -e
 
 . ./cmd.sh
@@ -21,24 +21,6 @@ set -e
 align_script=steps/align_fmllr.sh
 exp_dir=./exp
 
-steps/align_fmllr.sh  --cmd "$train_cmd" --nj $nj \
- $traindata/mfcc39_pitch9 data/lang $exp_dir/tri4a $exp_dir/tri4a_ali
-
-# Building a larger SAT system.
-
-steps/train_sat.sh --cmd "$train_cmd" \
- 5000 80000 $traindata/mfcc39_pitch9 data/lang $exp_dir/tri4a_ali $exp_dir/tri5a || exit 1;
-
-utils/mkgraph.sh data/lang_3small_test $exp_dir/tri5a $exp_dir/tri5a/graph || exit 1;
-for affix in $testdata_affix ; do
- steps/decode_fmllr.sh --cmd "$decode_cmd" --config conf/decode.config --nj $nj \
-   $exp_dir/tri5a/graph data/$affix/mfcc39_pitch9 $exp_dir/tri5a/decode_3small_$affix
- steps/lmrescore.sh --cmd "$decode_cmd" data/lang_3{small,mid}_test \
-   data/$affix/mfcc39_pitch9 exp/tri4a/decode_3{small,mid}_$affix
-done
-
-steps/align_fmllr.sh  --cmd "$train_cmd" --nj $nj \
- $traindata/mfcc39_pitch9 data/lang $exp_dir/tri5a $exp_dir/tri5a_ali
 
 if [ $stage -le 2 ] && [ -z $ivector_extractor ]; then
   # Train a system just for its LDA+MLLT transform.  We use --num-iters 13
@@ -69,33 +51,18 @@ if [ $stage -le 5 ]; then
   # Although the nnet will be trained by high resolution data,
   # we still have to perturbe the normal data to get the alignment
   # _sp stands for speed-perturbed
-  utils/perturb_data_dir_speed.sh 0.9 $traindata/mfcc39_pitch9 data/temp1
-  utils/perturb_data_dir_speed.sh 1.0 $traindata/mfcc39_pitch9 data/temp2
-  utils/perturb_data_dir_speed.sh 1.1 $traindata/mfcc39_pitch9 data/temp3
-  utils/combine_data.sh --extra-files utt2uniq $traindata\_sp/mfcc39_pitch9 data/temp1 data/temp2 data/temp3
-  rm -r data/temp1 data/temp2 data/temp3
-
-  mfccdir=data/mfcc_pitch_sp
   
   name=`basename $traindata\_sp`
-
-  steps/make_mfcc_pitch_online.sh --cmd "$train_cmd" --nj $nj --name $name \
-    $traindata\_sp/mfcc39_pitch9 exp/make_mfcc_perturbed/$name $mfccdir || exit 1;
-  steps/compute_cmvn_stats.sh --name $name $traindata\_sp/mfcc39_pitch9 exp/make_mfcc/$name $mfccdir || exit 1;
   
-  utils/fix_data_dir.sh $traindata\_sp/mfcc39_pitch9
-  
-  $align_script --nj $nj --cmd "$train_cmd" \
-    $traindata\_sp/mfcc39_pitch9 data/lang $gmm_dir ${gmm_dir}_sp_ali || exit 1
 
   # Now perturb the high resolution data
-  utils/copy_data_dir.sh $traindata\_sp/mfcc39_pitch9 $traindata\_sp/mfcc40_pitch3
 
   mfccdir=data/mfcc_hires_pitch_sp
-
+  
   steps/make_mfcc_pitch_online.sh --cmd "$train_cmd" --nj $nj --mfcc-config conf/mfcc_hires.conf --name $name \
     $traindata\_sp/mfcc40_pitch3 exp/make_hires/$name $mfccdir || exit 1;
-  steps/compute_cmvn_stats.sh $traindata\_sp/mfcc40_pitch3 --name $name exp/make_hires/$name $mfccdir || exit 1;
+
+  steps/compute_cmvn_stats.sh --name $name $traindata\_sp/mfcc40_pitch3 exp/make_hires/$name $mfccdir || exit 1;
 
   utils/fix_data_dir.sh $traindata\_sp/mfcc40_pitch3
   
@@ -108,6 +75,7 @@ if [ $stage -le 5 ]; then
   utils/fix_data_dir.sh $traindata\_sp/mfcc40
 fi
 
+ivector_extractor=exp/nnet3/extractor
 if [ -z $ivector_extractor ]; then
   echo "iVector extractor is not found!"
   exit 1;
@@ -145,4 +113,5 @@ if [ $stage -le 7 ]; then
   [ -f exp/nnet3/.error ] && echo "$0: error extracting iVectors." && exit 1;
 fi
 
+local/nnet3/run_tdnn_lstm.sh
 exit 0;
