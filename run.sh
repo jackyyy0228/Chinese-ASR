@@ -30,11 +30,11 @@ if [ $LANG_DATA_PREP = true ] ; then
   # LM training
   local/train_lms.sh --lm-type 3gram-mincount
   # LM pruning : to ensure G.fst < 70Mb
-  prune_lm.sh --arpa 10.0 ./data/local/lm/4gram-mincount
+  prune_lm.sh --arpa 10.0 ./data/local/lm/3gram-mincount
   #G compilation, check LG composition
   local/format_data.sh data/local/lm/3gram-mincount/lm_pr10.0.gz data/lang_3small_test
   #LM (middle size)
-  prune_lm.sh --arpa 4.0 ./data/local/lm/4gram-mincount
+  prune_lm.sh --arpa 4.0 ./data/local/lm/3gram-mincount
   local/format_data.sh data/local/lm/3gram-mincount/lm_pr4.0.gz data/lang_3mid_test
   #4-gram LM (the largest)
   local/train_lms.sh --lm-type 4gram-mincount
@@ -50,7 +50,7 @@ fi
 
 exp_dir=./exp
 traindata=./data/train/mfcc39_pitch9
-testdata_affix="TOCFL cyberon_english_test cyberon_chinese_test"
+testdata_affix="TOCFL cyberon_chinese_test"
 
 if [ $TRAIN_MONO = true ] ; then
   echo "Training Monophone models...."

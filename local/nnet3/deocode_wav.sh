@@ -9,12 +9,15 @@ if [ $# != 2 ]; then
   echo " Usage : decode_wav.sh <wav_dir> <decode_dir> "
 fi
 
+stage=0
+nj=8
+
+. ./utils/parse_options.sh
+
 lang=data/lang
 dir=exp/nnet3/tdnn_lstm_no_eng_nnet_align
 wav_dir=$1
 decodedir=$2
-nj=8
-stage=0
 
 mkdir -p $decodedir
 
@@ -73,6 +76,7 @@ if [ $stage -le 2 ]; then
     --frames-per-chunk 30 \
     --nj 8 --cmd "$decode_cmd" \
     --online-ivector-dir $ivectordir \
+    --stage 3 \
     $graph_dir $datadir ${dir}/decode_looped_3small_$name || exit 1
   
   endt=`date +%s`

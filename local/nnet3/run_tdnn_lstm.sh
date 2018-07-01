@@ -98,7 +98,7 @@ fi
 gmm_dir=exp/${gmm}
 ali_dir=exp/${gmm}_sp_ali
 lang=data/lang
-dir=exp/nnet3${nnet3_affix}/tdnn_lstm_no_eng_nnet_align
+dir=exp/nnet3${nnet3_affix}/tdnn_lstm_no_eng_nnet_align_ep7
 train_data_dir=data/train_no_eng_sp/mfcc40_pitch3
 train_ivector_dir=exp/nnet3/ivectors_train_no_eng_sp
 
@@ -157,7 +157,7 @@ if [ $stage -le 13 ]; then
     --feat.cmvn-opts="--norm-means=false --norm-vars=false" \
     --trainer.srand=$srand \
     --trainer.max-param-change=2.0 \
-    --trainer.num-epochs=4 \
+    --trainer.num-epochs=7 \
     --trainer.deriv-truncate-margin=10 \
     --trainer.samples-per-iter=20000 \
     --trainer.optimization.num-jobs-initial=2 \

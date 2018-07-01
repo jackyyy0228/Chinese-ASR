@@ -40,12 +40,12 @@ right_context_final=-1     # if >=0, right-context for last chunk of an utteranc
 compress=true   # set this to false to disable compression (e.g. if you want to see whether
                 # results are affected).
 
-num_utts_subset=300     # number of utterances in validation and training
+num_utts_subset=100     # number of utterances in validation and training
                         # subsets used for shrinkage and diagnostics.
 num_valid_egs_combine=0  # #validation examples for combination weights at the very end.
 num_train_egs_combine=1000 # number of train examples for the above.
 num_egs_diagnostic=400 # number of frames for "compute_prob" jobs
-frames_per_iter=400000 # each iteration of training, see this many frames per
+frames_per_iter=10000 # each iteration of training, see this many frames per
                        # job, measured at the sampling rate of the features
                        # used.  This is just a guideline; it will pick a number
                        # that divides the number of samples in the entire data.

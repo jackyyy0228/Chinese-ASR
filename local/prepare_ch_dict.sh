@@ -46,124 +46,12 @@ fi
 if [ $stage -le 1 ] ; then
   # Limit vocabulary size 
   PYTHONIOENCODING=utf-8 python3 local/data/extract_words.py $vocabulary_size $lm_text | sort -u > $dict_dir/words.txt
-  # Split unknown word to characters 
+  # Split unknown word to characters and convert number to chinese
   PYTHONIOENCODING=utf-8 python3 local/data/normalize_text.py $lm_text $dict_dir/words.txt | sort -u > ${lm_text}2
   mv ${lm_text}2 $lm_text
 fi
 
-if [ $stage -le 2 ] ; then
-  cat $dict_dir/words.txt | grep '[a-zA-Z]' > $dict_dir/lexicon-en/words-en.txt || exit 1;
-  cat $dict_dir/words.txt | grep -v '[a-zA-Z]' > $dict_dir/lexicon-ch/words-ch.txt || exit 1;
-  ##### produce pronunciations for english
-  if [ ! -f $dict_dir/cmudict/cmudict.0.7a ]; then
-    echo "--- Downloading CMU dictionary ..."
-    svn co -r 13068 https://svn.code.sf.net/p/cmusphinx/code/trunk/cmudict \
-      $dict_dir/cmudict || exit 1;
-  fi
-  # format cmudict
-  echo "--- Striping stress and pronunciation variant markers from cmudict ..."
-  perl $dict_dir/cmudict/scripts/make_baseform.pl \
-    $dict_dir/cmudict/cmudict.0.7a /dev/stdout |\
-    sed -e 's:^\([^\s(]\+\)([0-9]\+)\(\s\+\)\(.*\):\1\2\3:' > $dict_dir/cmudict/cmudict-plain.txt || exit 1;
 
-  # extract in-vocab lexicon and oov words
-  echo "--- Searching for English OOV words ..."
-  awk 'NR==FNR{words[$1]; next;} !($1 in words)' \
-    $dict_dir/cmudict/cmudict-plain.txt $dict_dir/lexicon-en/words-en.txt |\
-    egrep -v '<.?s>' > $dict_dir/lexicon-en/words-en-oov.txt || exit 1;
-
-  awk 'NR==FNR{words[$1]; next;} ($1 in words)' \
-    $dict_dir/lexicon-en/words-en.txt $dict_dir/cmudict/cmudict-plain.txt |\
-    egrep -v '<.?s>' > $dict_dir/lexicon-en/lexicon-en-iv.txt || exit 1;
-
-  wc -l $dict_dir/lexicon-en/words-en-oov.txt
-  wc -l $dict_dir/lexicon-en/lexicon-en-iv.txt
-fi
-
-if [ $stage -le 3 ] ; then
-  # setup g2p and generate oov lexicon
-  if [ ! -f conf/g2p_model ]; then
-    echo "--- Downloading a pre-trained Sequitur G2P model ..."
-    wget http://sourceforge.net/projects/kaldi/files/sequitur-model4 -O conf/g2p_model
-   if [ ! -f conf/g2p_model ]; then
-      echo "Failed to download the g2p model!"
-      exit 1
-    fi
-  fi
-
-  echo "--- Preparing pronunciations for OOV words ..."
-  g2p=`which g2p.py`
-
-  if [ ! -x $g2p ]; then
-    echo "g2p.py is not found. Checkout tools/extras/install_sequitur.sh."
-    exit 1
-  fi
-  g2p.py --model=conf/g2p_model --apply $dict_dir/lexicon-en/words-en-oov.txt \
-    > $dict_dir/lexicon-en/lexicon-en-oov.txt || exit 1;
-
-  # merge in-vocab and oov lexicon
-  cat $dict_dir/lexicon-en/lexicon-en-oov.txt $dict_dir/lexicon-en/lexicon-en-iv.txt |\
-    sort > $dict_dir/lexicon-en/lexicon-en-phn.txt || exit 1;
-
-  # convert cmu phoneme to pinyin phonenme
-  mkdir $dict_dir/map
-  cat conf/cmu2pinyin | awk '{print $1;}' | sort -u > $dict_dir/map/cmu || exit 1;
-  cat conf/pinyin2cmu | awk -v cmu=$dict_dir/map/cmu \
-    'BEGIN{while((getline<cmu)) dict[$1] = 1;}
-     {for (i = 2; i <=NF; i++) if (dict[$i]) print $i;}' | sort -u > $dict_dir/map/cmu-used || exit 1;
-  cat $dict_dir/map/cmu | awk -v cmu=$dict_dir/map/cmu-used \
-    'BEGIN{while((getline<cmu)) dict[$1] = 1;}
-     {if (!dict[$1]) print $1;}' > $dict_dir/map/cmu-not-used || exit 1;
-
-  awk 'NR==FNR{words[$1]; next;} ($1 in words)' \
-    $dict_dir/map/cmu-not-used conf/cmu2pinyin |\
-    egrep -v '<.?s>' > $dict_dir/map/cmu-py || exit 1;
-
-  cat $dict_dir/map/cmu-py | \
-    perl -e '
-    open(MAPS, $ARGV[0]) or die("could not open map file");
-    my %py2ph;
-    foreach $line (<MAPS>) {
-      @A = split(" ", $line);
-      $py = shift(@A);
-      $py2ph{$py} = [@A];
-    }
-    my @entry;
-    while (<STDIN>) {
-      @A = split(" ", $_);
-      @entry = ();
-      $W = shift(@A);
-      push(@entry, $W);
-      for($i = 0; $i < @A; $i++) { push(@entry, @{$py2ph{$A[$i]}}); }
-      print "@entry";
-      print "\n";
-    }
-  ' conf/pinyin2cmu > $dict_dir/map/cmu-cmu || exit 1;
-
-  cat $dict_dir/lexicon-en/lexicon-en-phn.txt | \
-    perl -e '
-    open(MAPS, $ARGV[0]) or die("could not open map file");
-    my %py2ph;
-    foreach $line (<MAPS>) {
-      @A = split(" ", $line);
-      $py = shift(@A);
-      $py2ph{$py} = [@A];
-    }
-    my @entry;
-    while (<STDIN>) {
-      @A = split(" ", $_);
-      @entry = ();
-      $W = shift(@A);
-      push(@entry, $W);
-      for($i = 0; $i < @A; $i++) {
-        if (exists $py2ph{$A[$i]}) { push(@entry, @{$py2ph{$A[$i]}}); }
-        else {push(@entry, $A[$i])};
-      }
-      print "@entry";
-      print "\n";
-    }
-  ' $dict_dir/map/cmu-cmu > $dict_dir/lexicon-en/lexicon-en.txt || exit 1;
-fi
 
 if [ $stage -le 4 ] ; then
   ##### produce pronunciations for chinese
@@ -303,8 +191,7 @@ if [ $stage -le 5 ] ; then
   cat $dict_dir/lexicon-ch/lexicon-ch.txt | sed -e 's/U:/V/g' | sed -e 's/ R\([0-9]\)/ ER\1/g'| sed 's/M2/N2/g' | sed 's/M4/N4/g' | 
     utils/pinyin_map.pl conf/pinyin2cmu > $dict_dir/lexicon-ch/lexicon-ch-cmu.txt || exit 1;
 
-  # combine English and Chinese lexicons
-  cat $dict_dir/lexicon-en/lexicon-en.txt $dict_dir/lexicon-ch/lexicon-ch-cmu.txt |\
+  cat $dict_dir/lexicon-ch/lexicon-ch-cmu.txt |\
     sort -u > $dict_dir/lexicon1.txt || exit 1;
 
   cat $dict_dir/lexicon1.txt | awk '{ for(n=2;n<=NF;n++){ phones[$n] = 1; }} END{for (p in phones) print p;}'| \

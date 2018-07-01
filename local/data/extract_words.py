@@ -6,7 +6,6 @@ sys.path.append('local/data/tool/jieba-zh_TW')
 import jieba
 not_in_word=[ '`', '÷', '×', '≠', '<', '>', '|', '°', '┬', '┐', '├', '┼', '┤', '└', '┴', '│', '¯', '-', ';', '!', '¿', '·', '‘', '’', '"', '(', ')', '[', ']', '{', '}', '§', '®', '™', '@', '$', '€', '*', '&', '&&', '&&&', '±', '━', '←', '→', '↑', '↓', '♪', '╱', '╲', '◢', '◣', 'ˋ', '▁', '\x1b', '\x7f', '\x80', '¼', '½', '-', 'Á', 'À', 'Â', 'Å', 'Ä', 'Ā','（ ','˙']
 
-
 def check_word(word):
     for item in ['#','.',' ','、','「','」','”','“','…','）','）','：','，',':','?','、','。','；','！','+','_']:
         if item in word:
@@ -35,10 +34,12 @@ if __name__ == '__main__':
                     if len(token) > 15:
                         continue
                     token = to_chinese(int(token))
-                if check_word(token):
-                    all_words.append(token)
-                ch_word = re.findall(u'[\u4e00-\u9fff]+', token)
-                if len(ch_word) > 0:
+                ch_word_list = re.findall(u'[\u4e00-\u9fff]+', token)
+                if len(ch_word_list) == 0:
+                    continue
+                ch_word = ''.join(ch_word_list) #covert to word from list
+                all_words.append(ch_word)
+                if len(ch_word) > 0 :
                     for cha in ch_word:
                         all_words.append(cha)
     c = Counter(all_words)
