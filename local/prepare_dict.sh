@@ -49,20 +49,8 @@ fi
 
 if [ $stage -le 1 ] ; then
   # Limit vocabulary size and add OOV character to words.txt 
-  PYTHONIOENCODING=utf-8 python3 local/data/extract_words.py $vocabulary_size $lm_text $train_corpus_text | sort -u > $dict_dir/words.txt
-  
-  # Split unknown word to characters for lm text
-  PYTHONIOENCODING=utf-8 python3 local/data/normalize_text.py $lm_text $dict_dir/words.txt | sort -u > ${lm_text}2
-  mv ${lm_text}2 $lm_text
-  
-  # Split unknown word to characters for corpus text
-  for corpus in cyberon_chinese_train PTS NER MATBN ; do
-    for corpus_text in ./data/$corpus/*/text ; do
-      mv $corpus_text $corpus_text\.backup
-      PYTHONIOENCODING=utf-8 python3 local/data/normalize_text.py $corpus_text $dict_dir/words.txt | sort -u > $corpus_text
-    done
-  done
-
+  #PYTHONIOENCODING=utf-8 python3 local/data/extract_words.py $vocabulary_size $lm_text $train_corpus_text | sort -u > $dict_dir/words.txt
+  echo 'hi'
 fi
 
 if [ $stage -le 2 ] ; then
@@ -84,7 +72,7 @@ if [ $stage -le 2 ] ; then
   echo "--- Searching for English OOV words ..."
   awk 'NR==FNR{words[$1]; next;} !($1 in words)' \
     $dict_dir/cmudict/cmudict-plain.txt $dict_dir/lexicon-en/words-en.txt |\
-    egrep -v '<.?s>' > $dict_dir/lexicon-en/words-en-oov.txt || exit 1;
+    egrep -v '<.?s>' > $dict_dir/lexicon-en/words-en-oov.txt;
 
   awk 'NR==FNR{words[$1]; next;} ($1 in words)' \
     $dict_dir/lexicon-en/words-en.txt $dict_dir/cmudict/cmudict-plain.txt |\
@@ -354,6 +342,21 @@ if [ $stage -le 5 ] ; then
   (echo '!SIL SIL'; echo '[VOCALIZED-NOISE] SPN'; echo '[NOISE] NSN'; echo '[LAUGHTER] LAU';
    echo '<UNK> SPN' ) | \
    cat - $dict_dir/lexicon1.txt  > $dict_dir/lexicon.txt || exit 1;
+fi
+ 
+if [ $stage -le 6 ] ; then
+  cat lexicon.txt  | awk '{print $1}' > $dict_dir/words.no.oov.txt
+  # Split unknown word to characters for lm text
+  PYTHONIOENCODING=utf-8 python3 local/data/normalize_text.py $lm_text $dict_dir/words.no.oov.txt | sort -u > ${lm_text}2
+  mv ${lm_text}2 $lm_text
+  
+  # Split unknown word to characters for corpus text
+  for corpus in cyberon_chinese_train PTS NER MATBN ; do
+    for corpus_text in ./data/$corpus/*/text ; do
+      mv $corpus_text $corpus_text\.backup
+      PYTHONIOENCODING=utf-8 python3 local/data/normalize_text.py $corpus_text $dict_dir/words.no.oov.txt | sort -u > $corpus_text
+    done
+  done
 fi
 
 

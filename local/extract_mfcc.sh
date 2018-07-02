@@ -57,7 +57,7 @@ if [ $stage -le 2 ] ; then
   combine48=''
   combine43=''
   combine40=''
-  for corpus in cyberon_chinese_train cyberon_english_train PTS NER seame Tl MATBN ; do
+  for corpus in cyberon_chinese_train PTS NER MATBN ; do
     data=./data/$corpus/mfcc39_pitch9
     combine48="$data $combine48"
     data=./data/$corpus/mfcc40_pitch3
@@ -68,20 +68,4 @@ if [ $stage -le 2 ] ; then
   utils/combine_data.sh data/train/mfcc39_pitch9 $combine48
   utils/combine_data.sh data/train/mfcc40_pitch3 $combine43
   utils/combine_data.sh data/train/mfcc40 $combine40
-
-  # make no english audio dataset (only english alphabet and numbers)
-  combine48=''
-  combine43=''
-  combine40=''
-  for corpus in cyberon_chinese_train PTS NER Tl MATBN ; do
-    data=./data/$corpus/mfcc39_pitch9
-    combine48="$data $combine48"
-    data=./data/$corpus/mfcc40_pitch3
-    combine43="$data $combine43"
-    data=./data/$corpus/mfcc40
-    combine40="$data $combine40"
-  done
-  utils/combine_data.sh data/train_no_eng/mfcc39_pitch9 $combine48
-  utils/combine_data.sh data/train_no_eng/mfcc40_pitch3 $combine43
-  utils/combine_data.sh data/train_no_eng/mfcc40 $combine40
 fi

@@ -11,7 +11,7 @@ nj=8 #number of job parallel running
 
 if [ $AUDIO_DATA_PREP = true ] ; then
   echo "Preparing audio data..."
-  for corpus in cyberon_chinese cyberon_english PTS NER TOCFL seame Tl ; do
+  for corpus in cyberon_chinese PTS NER TOCFL MATBN ; do
     local/data/data_prep_${corpus}.sh
   done
 fi
