@@ -10,7 +10,7 @@
 # for OOV, we just produce pronunciation using Charactrt Mapping.
 
 stage=0
-vocabulary_size=30000
+vocabulary_size=50000
 dict_dir=data/local/dict
 
 
@@ -20,7 +20,7 @@ echo $0
 
 
 lm_text=$dict_dir/text
-
+train_corpus_text=$dict_dir/train_corpus_text
 
 mkdir -p $dict_dir
 mkdir -p $dict_dir/lexicon-{en,ch}
@@ -34,21 +34,35 @@ if [ $stage -le 0 ] ; then
     exit 1
   fi
 
-  for corpus in cyberon_chinese_train cyberon_english_train PTS NER seame Tl ; do
+  for corpus in cyberon_chinese_train PTS NER MATBN ; do
     cat ./data/$corpus/mfcc39_pitch9/text | cut -d' ' -f2- -  >> $lm_text
   done
+  
+  ## To ensure there is no OOV for training corpus
+  cat $lm_text > $train_corpus_text 
 
   . local/data/corpus_path.sh
+
   PYTHONIOENCODING=utf-8 python3 local/data/extract_wiki.py $wiki >> $lm_text || exit 1;
   PYTHONIOENCODING=utf-8 python3 local/data/extract_ptt.py  $ptt >> $lm_text || exit 1;
 fi
 
 if [ $stage -le 1 ] ; then
-  # Limit vocabulary size 
-  PYTHONIOENCODING=utf-8 python3 local/data/extract_words.py $vocabulary_size $lm_text | sort -u > $dict_dir/words.txt
-  # Split unknown word to characters 
+  # Limit vocabulary size and add OOV character to words.txt 
+  PYTHONIOENCODING=utf-8 python3 local/data/extract_words.py $vocabulary_size $lm_text $train_corpus_text | sort -u > $dict_dir/words.txt
+  
+  # Split unknown word to characters for lm text
   PYTHONIOENCODING=utf-8 python3 local/data/normalize_text.py $lm_text $dict_dir/words.txt | sort -u > ${lm_text}2
   mv ${lm_text}2 $lm_text
+  
+  # Split unknown word to characters for corpus text
+  for corpus in cyberon_chinese_train PTS NER MATBN ; do
+    for corpus_text in ./data/$corpus/*/text ; do
+      mv $corpus_text $corpus_text\.backup
+      PYTHONIOENCODING=utf-8 python3 local/data/normalize_text.py $corpus_text $dict_dir/words.txt | sort -u > $corpus_text
+    done
+  done
+
 fi
 
 if [ $stage -le 2 ] ; then

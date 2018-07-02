@@ -22,6 +22,8 @@ def check_word(word):
 if __name__ == '__main__':
     voc_size = sys.argv[1]
     text_path = sys.argv[2]
+    train_path = sys.argv[3] #words must be in dictionary
+
     voc_size = int(voc_size)
 
     all_words = []
@@ -43,9 +45,17 @@ if __name__ == '__main__':
                     for cha in ch_word:
                         all_words.append(cha)
     c = Counter(all_words)
-    vocabs = c.most_common(voc_size)
+    vocabs = set([ x[0] for x in c.most_common(voc_size)])
+    
+    ## Add unknown character of train_corpus_words
+    with open(text_path, 'r', encoding='utf-8') as f:
+        for line in f:
+            tokens = line.rstrip().split()
+            for token in tokens:
+                if token not in vocabs :
+                    vocabs.add(token)
     for word in vocabs:
-        print(word[0])
+        print(word)
     
 
 

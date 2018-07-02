@@ -84,7 +84,7 @@ test_sets="TOCFL cyberon_chinese_test"
 train_ivector_dir=exp/nnet3/ivectors_train_no_eng_sp
 ali_dir=exp/tri4_ali_nodup$suffix
 treedir=exp/chain/tri5_7d_tree$suffix
-lang=data/lang
+lang=data/lang_chain
 
 
 # if we are using the speed-perturbed data we need to generate
@@ -216,7 +216,7 @@ if [ $stage -le 14 ]; then
   # Note: it might appear that this $lang directory is mismatched, and it is as
   # far as the 'topo' is concerned, but this script doesn't read the 'topo' from
   # the lang directory.
-  utils/mkgraph.sh --self-loop-scale 1.0 data/lang $dir $dir/graph
+  utils/mkgraph.sh --self-loop-scale 1.0 $lang $dir $dir/graph
 fi
 
 if [ $stage -le 14 ]; then

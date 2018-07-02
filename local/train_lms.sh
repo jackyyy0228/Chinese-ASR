@@ -14,6 +14,7 @@ add_ABCD=true
 
 . ./utils/parse_options.sh
 . ./path.sh
+
 for f in "$text" "$lexicon"; do
   [ ! -f $x ] && echo "$0: No such file $f" && exit 1;
 done

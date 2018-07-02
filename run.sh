@@ -23,7 +23,7 @@ fi
 if [ $LANG_DATA_PREP = true ] ; then
   echo "Preparing lang data..."
   #prepare dictionary lexicon
-  local/prepare_dict.sh --vocabulary-size 30000 --dict_dir data/local/dict --stage 2 || exit 1
+  local/prepare_dict.sh --vocabulary-size 50000 --dict_dir data/local/dict_tmp --stage 0 || exit 1
   # Phone Sets, questions, L compilation                                                                                                      
   utils/prepare_lang.sh data/local/dict "<UNK>" data/local/lang data/lang
   

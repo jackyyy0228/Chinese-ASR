@@ -15,8 +15,7 @@ if [ $stage -le 1 ] ; then
   mkdir -p $mfcc_pitch_hires_dir
   mkdir -p $mfcc_hires_dir
 
-  #for corpus in cyberon_chinese_train cyberon_english_train cyberon_chinese_test cyberon_english_test PTS NER TOCFL seame Tl MATBN ; do
-  for corpus in cyberon_chinese_train ; do
+  for corpus in cyberon_chinese_train cyberon_chinese_test PTS NER TOCFL MATBN ; do
     ##Extract MFCC39 + pitch9 feature
     data=./data/$corpus/mfcc39_pitch9
     steps/make_mfcc_pitch_online.sh --cmd "$train_cmd" --nj $nj --name $corpus $data exp/make_mfcc/$corpus $mfccdir || exit 1;
