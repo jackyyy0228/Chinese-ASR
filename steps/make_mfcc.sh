@@ -11,6 +11,7 @@ cmd=run.pl
 mfcc_config=conf/mfcc.conf
 compress=true
 write_utt2num_frames=false  # if true writes utt2num_frames
+name=
 # End configuration section.
 
 echo "$0 $@"  # Print the command line for logging
@@ -46,7 +47,10 @@ fi
 mfccdir=`perl -e '($dir,$pwd)= @ARGV; if($dir!~m:^/:) { $dir = "$pwd/$dir"; } print $dir; ' $mfccdir ${PWD}`
 
 # use "name" as part of name of the archive.
-name=`basename $data`
+if [ -z $name ]; then  
+  name=`basename $data`
+fi
+echo "name $name" 
 
 mkdir -p $mfccdir || exit 1;
 mkdir -p $logdir || exit 1;

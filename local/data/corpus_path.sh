@@ -9,3 +9,4 @@ Tl=/home/jacky/work/kgb/corpus/TlAlphaDigit
 wiki=/home/jacky/work/kgb/corpus/wiki
 ptt=/home/jacky/work/kgb/corpus/ptt
 MATBN=/home/jacky/work/kgb/corpus/MATBN
+aishell2=/data/local/kgb/corpus/AISHELL-2/iOS/data

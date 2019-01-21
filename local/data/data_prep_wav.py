@@ -9,7 +9,9 @@ if __name__ == '__main__':
     with open(utt2spk_path,'w') as f1, open(wavscp_path,'w') as f2:
         for dirPath, dirNames, fileNames in os.walk(sys.argv[1]):
             for name in fileNames:
-                file_name = os.path.join(dirPath, name)
-                f1.write(name + ' ' + name + '\n')
-                f2.write(name + ' ' + file_name + '\n')
+                if name.endswith('.wav'):
+                    file_name = os.path.join(dirPath, name)
+                    file_name = os.path.abspath(file_name)
+                    f1.write(name + ' ' + name + '\n')
+                    f2.write(name + ' ' + file_name + '\n')
     

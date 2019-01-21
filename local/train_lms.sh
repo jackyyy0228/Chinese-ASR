@@ -8,9 +8,8 @@ text=$dict_dir/text
 lexicon=$dict_dir/lexicon.txt
 
 lm_type=4gram
-dir=data/local/lm
+dir=data/local/lm_tmp
 
-add_ABCD=true
 
 . ./utils/parse_options.sh
 . ./path.sh
@@ -64,17 +63,6 @@ cat $cleantext | awk -v wmap=$dir/word_map 'BEGIN{while((getline<wmap)>0)map[$1]
 
 train_lm.sh --arpa --lmtype $lm_type $dir || exit 1;
 
-if [ $add_ABCD = true ] ; then
-  arpa_lm=$dir/$lm_type/lm_unpruned.gz
-  arpa_lm_unzip=$dir/$lm_type/lm_unpruned
-  
-  arpa_ABCD=$dir/$lm_type/lm_unpruned_ABCD
-  gunzip $arpa_lm
-
-  PYTHONIOENCODING=utf-8 python3 local/add_ABCD.py $arpa_lm_unzip $arpa_ABCD
-  gzip $arpa_lm_unzip
-  gzip $arpa_ABCD
-fi
 
 # LM is small enough that we don't need to prune it (only about 0.7M N-grams).
 # Perplexity over 128254.000000 words is 90.446690

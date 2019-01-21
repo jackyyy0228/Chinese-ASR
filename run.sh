@@ -159,3 +159,8 @@ if [ $TRAIN_CHAIN = true ] ; then
 fi
 ## Show all the performance of the aboves models
 local/show_all_cer.sh
+
+
+
+
+

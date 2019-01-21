@@ -11,12 +11,14 @@ cmd=run.pl
 fbank_config=conf/fbank.conf
 compress=true
 write_utt2num_frames=false  # if true writes utt2num_frames
+name=
 # End configuration section.
 
 echo "$0 $@"  # Print the command line for logging
 
 if [ -f path.sh ]; then . ./path.sh; fi
 . parse_options.sh || exit 1;
+
 
 if [ $# -lt 1 ] || [ $# -gt 3 ]; then
    echo "Usage: $0 [options] <data-dir> [<log-dir> [<fbank-dir>] ]";
@@ -43,12 +45,16 @@ else
 fi
 
 
+
 # make $fbankdir an absolute pathname.
 fbankdir=`perl -e '($dir,$pwd)= @ARGV; if($dir!~m:^/:) { $dir = "$pwd/$dir"; } print $dir; ' $fbankdir ${PWD}`
 
 # use "name" as part of name of the archive.
-name=`basename $data`
-
+if [ -z $name ]; then  
+  name=`basename $data`
+fi
+echo "name"
+echo $name
 mkdir -p $fbankdir || exit 1;
 mkdir -p $logdir || exit 1;
 

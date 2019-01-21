@@ -9,6 +9,7 @@ cmd=run.pl
 skip_scoring=false
 self_loop_scale=0.1  # only matters for mode 4.
 acoustic_scale=0.1   # only matters for mode 5.
+mdl=
 # End configuration section.
 
 echo "$0 $@"  # Print the command line for logging
@@ -107,7 +108,7 @@ case "$mode" in
   4) # 4 is also exact (like 3), but instead of subtracting the old LM-scores,
      # it removes the old graph scores entirely and adds in the lexicon,
      # grammar and transition weights.
-    mdl=`dirname $indir`/final.mdl
+    [ -z $mdl ] && mdl=`dirname $indir`/final.mdl
     [ ! -f $mdl ] && echo No such model $mdl && exit 1;
     [[ -f `dirname $indir`/frame_subsampling_factor && "$self_loop_scale" == 0.1 ]] && \
       echo "$0: WARNING: chain models need '--self-loop-scale 1.0'";

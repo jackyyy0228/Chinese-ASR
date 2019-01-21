@@ -1,4 +1,4 @@
-#!/bin/bash
+#/bin/bash
 
 
 # 1n is as 1m but with significant changes, replacing TDNN layers with a
@@ -27,7 +27,7 @@
 set -e
 
 # configs for 'chain'
-stage=0
+stage=12
 train_stage=-10
 get_egs_stage=-10
 speed_perturb=true
@@ -79,10 +79,10 @@ if [ "$speed_perturb" == "true" ]; then
 fi
 
 dir=exp/chain/tdnn_lstm${affix}${suffix}
-train_set=train_no_eng_sp/mfcc40_pitch3
-train_set_no_hires=train_no_eng_sp/mfcc39_pitch9
+train_set=train_sp/mfcc40_pitch3
+train_set_no_hires=train_sp/mfcc39_pitch9
 test_sets="TOCFL cyberon_chinese_test"
-train_ivector_dir=exp/nnet3/ivectors_train_no_eng_sp
+train_ivector_dir=exp/nnet3/ivectors_train_sp
 ali_dir=exp/tri4a_sp_ali
 treedir=exp/chain/tri5_7d_tree$suffix
 lang=data/lang_chain
@@ -95,8 +95,8 @@ lang=data/lang_chain
 if [ $stage -le 9 ]; then
   # Get the alignments as lattices (gives the CTC training more freedom).
   # use the same num-jobs as the alignments
-  steps/align_fmllr_lats.sh --nj 8 --cmd "$train_cmd" data/train_no_eng_sp/mfcc39_pitch9 \
-    data/lang exp/tri4a exp/tri4_lats_nodup$suffix
+  steps/align_fmllr_lats.sh --nj 8 --cmd "$train_cmd" data/train_sp/mfcc39_pitch9 \
+    data/lang exp/tri4a exp/tri4_lats_nodup${suffix}_2
   rm exp/tri4_lats_nodup$suffix/fsts.*.gz # save space
 fi
 
@@ -118,9 +118,9 @@ if [ $stage -le 11 ]; then
   # Build a tree using our new topology.
   steps/nnet3/chain/build_tree.sh --frame-subsampling-factor 3 \
       --context-opts "--context-width=2 --central-position=1" \
-      --cmd "$train_cmd" 7000 data/$train_set_no_hires $lang $ali_dir $treedir
+      --cmd "$train_cmd" 7000 data/train_sp/mfcc39_pitch9 $lang $ali_dir $treedir
 fi
-
+export CUDA_VISIBLE_DEVICES=0
 if [ $stage -le 12 ]; then
   echo "$0: creating neural net configs using the xconfig parser";
 
@@ -188,12 +188,12 @@ if [ $stage -le 13 ]; then
     --chain.apply-deriv-weights false \
     --chain.lm-opts="--num-extra-lm-states=2000" \
     --trainer.dropout-schedule $dropout_schedule \
-    --trainer.num-chunk-per-minibatch 64,32 \
+    --trainer.num-chunk-per-minibatch 128,64 \
     --trainer.frames-per-iter 1500000 \
     --trainer.max-param-change 2.0 \
-    --trainer.num-epochs 6 \
-    --trainer.optimization.num-jobs-initial 2 \
-    --trainer.optimization.num-jobs-final 2 \
+    --trainer.num-epochs 4 \
+    --trainer.optimization.num-jobs-initial 1 \
+    --trainer.optimization.num-jobs-final 1 \
     --trainer.optimization.initial-effective-lrate 0.001 \
     --trainer.optimization.final-effective-lrate 0.0001 \
     --trainer.optimization.momentum 0.0 \
@@ -209,7 +209,7 @@ if [ $stage -le 13 ]; then
     --cleanup.remove-egs $remove_egs \
     --feat-dir data/${train_set} \
     --tree-dir $treedir \
-    --lat-dir exp/tri4_lats_nodup$suffix \
+    --lat-dir exp/tri4_lats_nodup${suffix}_2 \
     --dir $dir  || exit 1;
 fi
 
@@ -217,41 +217,85 @@ if [ $stage -le 14 ]; then
   # Note: it might appear that this $lang directory is mismatched, and it is as
   # far as the 'topo' is concerned, but this script doesn't read the 'topo' from
   # the lang directory.
-  utils/mkgraph.sh --self-loop-scale 1.0 $lang $dir $dir/graph
+  utils/mkgraph.sh --self-loop-scale 1.0 data/lang $dir $dir/graph
 fi
 
 if [ $stage -le 14 ]; then
   rm $dir/.error 2>/dev/null || true
   for affix in $test_sets ; do
     test_ivector_dir=exp/nnet3/ivectors_$affix
-    graph_dir=$dir/graph                                     
-    
+    graph_dir=$dir/graph
+
     startt=`date +%s`
-    echo $startt 
+    echo $startt
     steps/nnet3/decode_looped.sh \
       --frames-per-chunk 30 \
       --nj 12 --cmd "$decode_cmd" \
       --online-ivector-dir $test_ivector_dir \
       $graph_dir data/$affix/mfcc40_pitch3 ${dir}/decode_looped_3small_${affix} || exit 1
-    
+
     endt=`date +%s`
     runtime=$((endt-startt))
     echo "Decode_loop time of $affix: $runtime"
-    
+
     startt=`date +%s`
     steps/lmrescore.sh --cmd "$decode_cmd" data/lang_3{small,mid}_test \
       data/$affix/mfcc40_pitch3 ${dir}/decode_looped_3{small,mid}_$affix || exit 1
-    
+
     endt=`date +%s`
     runtime=$((endt-startt))
     echo "Decode_loop rescoring time of $affix: $runtime"
-    
+
     startt=`date +%s`
     steps/lmrescore.sh --cmd "$decode_cmd" data/lang_{3mid,4large}_test \
       data/$affix/mfcc40_pitch3 ${dir}/decode_looped_{3mid,4large}_$affix || exit 1
-    
+
     endt=`date +%s`
     runtime=$((endt-startt))
     echo "Decode_loop rescoring time of $affix: $runtime"
-  done                                                                       
+  done
+fi
+
+if [ $stage -le 15 ]; then
+  iter_opts=
+  if [ ! -z $decode_iter ]; then
+    iter_opts=" --iter $decode_iter "
+  fi
+  for affix in $test_set ; do
+      (
+       graph_dir=$dir/graph
+       startt=`date +%s`
+       echo $startt
+       steps/nnet3/decode.sh --acwt 1.0 --post-decode-acwt 10.0 \
+          --nj 50 --cmd "$decode_cmd" $iter_opts \
+          --extra-left-context $extra_left_context \
+          --extra-right-context $extra_right_context \
+          --extra-left-context-initial 0 \
+          --extra-right-context-final 0 \
+          --frames-per-chunk "$frames_per_chunk_primary" \
+          --online-ivector-dir exp/nnet3/ivectors_${affix} \
+         $graph_dir data/${affix}/mfcc40_pitch3 \
+         ${dir}/decode_3small_${affix}
+       
+       endt=`date +%s`
+       runtime=$((endt-startt))
+       echo "Decode time of $affix: $runtime"
+
+       startt=`date +%s`
+       steps/lmrescore.sh --cmd "$decode_cmd" data/lang_3{small,mid}_test \
+         data/$affix/mfcc40_pitch3 ${dir}/decode_3{small,mid}_$affix || exit 1
+
+       endt=`date +%s`
+       runtime=$((endt-startt))
+       echo "Decode rescoring time of $affix: $runtime"
+
+       startt=`date +%s`
+       steps/lmrescore.sh --cmd "$decode_cmd" data/lang_{3mid,4large}_test \
+         data/$affix/mfcc40_pitch3 ${dir}/decode_{3mid,4large}_$affix || exit 1
+
+       endt=`date +%s`
+       runtime=$((endt-startt))
+       echo "Decode rescoring time of $affix: $runtime"
+      ) &
+  done
 fi

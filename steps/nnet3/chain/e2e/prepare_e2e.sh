@@ -52,8 +52,8 @@ mkdir -p $dir/log
 
 echo $scale_opts > $dir/scale_opts  # just for easier reference (it is in the logs too)
 echo $nj > $dir/num_jobs
-sdata=$data/split$nj;
-[[ -d $sdata && $data/feats.scp -ot $sdata ]] || split_data.sh $data $nj || exit 1;
+#sdata=$data/split$nj;
+#[[ -d $sdata && $data/feats.scp -ot $sdata ]] || split_data.sh $data $nj || exit 1;
 
 cp $lang/phones.txt $dir || exit 1;
 
@@ -78,7 +78,7 @@ if [ $stage -le 0 ]; then
   copy-transition-model $dir/0.mdl $dir/0.trans_mdl
   ln -s 0.mdl $dir/final.mdl  # for consistency with scripts which require a final.mdl
 fi
-
+exit 1
 lex=$lang/L.fst
 if [ $stage -le 1 ]; then
   echo "$0: Compiling training graphs"
