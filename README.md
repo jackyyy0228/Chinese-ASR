@@ -20,6 +20,16 @@ https://l.facebook.com/l.php?u=https%3A%2F%2Fgithub.com%2Fldkrsi%2Fjieba-zh_TW&h
 
 4.bash run.sh
 
+## some useful scripts
+
+1. LM training and interpolation : local/lm
+
+2. Customed WFST for multiple choice problem : local/lm/wfst
+
+-> Force the outputs to the format of "<one> XXX <two> XXX  <three> XXX  <four> XXX"
+
+3. scripts of training DFSMN : local/nnet
+
 ## Experiment
 
 | Ｍodel        | TOCFL(CER%)     | Cyberon_Chinese_test(CER%)  |
@@ -32,3 +42,4 @@ https://l.facebook.com/l.php?u=https%3A%2F%2Fgithub.com%2Fldkrsi%2Fjieba-zh_TW&h
 | tri5          | 65.60           |    49.96                    |
 | tdnn_lstm1     | 18.30           |    24.82                    | 
 | tdnn_lstm(realign)     | 15.88           |    22.24                    | 
+| DFSMN(Alibaba)     | 11.22         |    12.14                    | 
